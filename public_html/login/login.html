@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+
+        <title>Login</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <style>
+
+        </style>
+        <script type="text/javascript" source="../lib/ajax.js"></script>
+        <script type="text/javascript" source="../lib/login.js"></script>
+        <script type="text/javascript">
+            function attemptLogin(username_el, password_el) {
+                postRequest([username_el, password_el].map(el => el.id + '=' + el.value), "../../private/login/login.php", login, alert);
+            }
+        </script>
+
+    </head>
+
+    <body>
+
+        <div class="top">
+            <h1>MCRT</h1>
+        </div>
+
+        <div class="middle">
+
+            <div class="left">
+
+                Username
+                <input id="username" type="text" required autofocus>
+
+                Password
+                <input id="password" type="password" required>
+
+                <input class="button" onclick="attemptLogin(username, password)" value="Login">
+
+            </div>
+
+            <div class="right">
+
+                Not registered yet?<br>
+                <input class="button" onclick="location.href='user/register.php';" value="Click here" />
+
+            </div>
+
+        </div>
+
+    </body>
+
+</html>

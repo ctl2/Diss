@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+
+        <title>Reading Session</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <style>
+
+        </style>
+
+        <script type="text/javascript" source="../lib/ajax.js"></script>
+        <script type="text/javascript" source="setup.js" defer></script>
+        <script type="text/javascript" source="controlTexts.js" defer></script>
+        <script type="text/javascript" source="search.js" defer></script>
+        <script type="text/javascript" source="divs/lib.js"></script>
+        <script type="text/javascript" source="divs/upload.js"></script>
+        <script type="text/javascript" source="divs/viewDetails.js"></script>
+        <script type="text/javascript" source="divs/analyse.js"></script>
+        <script type="text/javascript" source="divs/compare.js"></script>
+
+    </head>
+
+    <body>
+
+        <div id="top">
+            <input class="button" onclick="showUploadDiv()" value="New Text" />
+            <input class="button" onclick="showFilterDiv()" value="Filter" />
+            <input class="button" onclick="showViewDetailsDiv()" value="View Details" disabled />
+            <input class="button" onclick="showAnalyseDiv()" value="Analyse" disabled />
+            <input class="button" onclick="showCompareDiv()" value="Compare" disabled />
+        </div>
+
+        <div id="middle">
+
+            <div id="upload" hidden>
+
+                <div class="left">
+                    Title <input id="up_title" type="text" /><br>
+                    File <input id="up_file" type="file" />
+                </div>
+
+                <div class="right">
+
+                    Minimum Target Age
+                    <input type="checkbox" onchange="up_min_age.disabled = !up_min_age.disabled;" />
+                    <input id="up_min_age" type="number" disabled /><br>
+
+                    Maximum Target Age
+                    <input type="checkbox" onchange="up_max_age.disabled = !up_max_age.disabled;" />
+                    <input id="up_max_age" type="number" disabled /><br>
+
+                    Make Text and Associated Reading Data Public
+                    <input id="up_isPublic" type="checkbox" />
+
+                </div>
+
+                <input type="button" onclick="upload()" value="Upload" />
+
+            </div>
+
+            <div id="filter" hidden>
+
+                Title Keywords
+                <input id="fil_search" type="text" placeholder="Search" /><br>
+
+                Ownership
+                <select id="fil_type">
+                    <option value="owned">Me</option>
+                    <option value="unowned">Not Me</option>
+                    <option value="all">All</option>
+                </select><br>
+
+                Minimum target age
+                <input id="fil_min_age" type="number" value="0" />
+
+                Maximum target age
+                <input id="fil_max_age" type="number" value="255" />
+
+                <input id="filter_button" type="button"
+                onclick="filterTexts(fil_search.value, fil_type.value, fil_min_age.value, fil_max_age.value)"
+                value="Filter" />
+
+            </div>
+
+            <div id="view" hidden>
+
+                <h2 id="view_title"></h2>
+                <br>
+
+                <table id="view_table">
+                    <tr>
+                        <td>Version</td>
+                        <td><select id="view_version_sel"></select></td>
+                    </tr>
+                    <tr>
+                        <td>Target Age Range</td>
+                        <td><div id="view_age_range"></div></td>
+                    </tr>
+                    <tr>
+                        <td>Target Gender</td>
+                        <td><div id="view_gender"></div></td>
+                    </tr>
+                    <tr>
+                        <td>Privacy Level</td>
+                        <td><div id="view_privacy"></div></td>
+                    </tr>
+                    <tr>
+                        <td id="view_text" colspan="2"><td>
+                    </tr>
+                </table>
+
+            </div>
+
+            <div id="analyse" hidden>
+
+                <h2 id="an_title"></h2>
+                <br>
+
+                <select id="an_version_sel"></select>
+                <select id="an_average_sel">
+                    <option value="mean">Mean</option>
+                    <option value="median">Median</option>
+                    <option value="mode">Mode</option>
+                </select>
+                <select id="an_graphic_sel">
+                    <option value="csv">CSV</option>
+                    <option value="heatmap">Heatmap</option>
+                    <option value="graph">Graph</option>
+                </select>
+                <select id="an_statistic_sel">
+                    <option value="first_fix">First-Fixation Duration</option>
+                    <option value="gaze">Gaze Duration</option>
+                    <option value="spill">Spillover Time</option>
+                    <option value="reg_in">Regressions In</option>
+                    <option value="reg_out">Regressions Out</option>
+                </select>
+                <br>
+
+                <select id="an_gender_sel">
+                    <option value="all">All</option>
+                    <option value="male">Male</option>
+                    <option value="femail">Female</option>
+                </select>
+                <div>
+                    Minimum age: <input type="number" id="an_min_age_sel" />
+                    Maximum age: <input type="number" id="an_max_age_sel" />
+                </div>
+                <input type="button" onclick="download()" value="Download" />
+
+                <div id="an_graphic"></div>
+
+            </div>
+
+            <div id="compare" hidden>
+
+                <select id="comp_average_sel">
+                    <option value="mean">Mean</option>
+                    <option value="median">Median</option>
+                    <option value="mode">Mode</option>
+                </select>
+                <br>
+
+                <table id="comp_table">
+                    <tr>
+                        <th>Statistic</th>
+                        <th id="comp_title_1"></th>
+                        <th id="comp_title_2"></th>
+                    </tr>
+                    <tr>
+                        <td>Number of Fixations (%)</td>
+                        <td id="comp_fix_1"></td>
+                        <td id="comp_fix_2"></td>
+                    </tr>
+                    <tr>
+                        <td>Gaze Duration (ms)</td>
+                        <td id="comp_gaze_1"></td>
+                        <td id="comp_gaze_2"></td>
+                    </tr>
+                    <tr>
+                        <td>First-Fixation Duration (ms)</td>
+                        <td id="comp_first_fix_1"></td>
+                        <td id="comp_first_fix_2"></td>
+                    </tr>
+                    <tr>
+                        <td>Reading Speed (wpm)</td>
+                        <td id="comp_wpm_1"></td>
+                        <td id="comp_wpm_2"></td>
+                    </tr>
+                </table>
+
+            </div>
+
+            <br><br>
+
+            <table id="texts">
+                <tr>
+                    <th>Unselected</th>
+                    <th>Selected</th>
+                </tr>
+            </table>
+
+        </div>
+
+    </body>
+
+</html>
