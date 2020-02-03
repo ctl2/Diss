@@ -1,5 +1,3 @@
-var unselPageNumber = 1;
-var selPageNumber = 1;
 const textRows = 5;
 
 function setupTextTable(textsJSON) {
@@ -7,7 +5,7 @@ function setupTextTable(textsJSON) {
     let textTable = document.getElementById("texts");
     appendTextRows(textTable);
     appendNavRow(textTable);
-    document.getElementById("filter_button").onclick();
+    document.getElementById("filter_button").click();
 }
 
 function appendTextRows(table_el) {

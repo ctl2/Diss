@@ -10,9 +10,8 @@ function filterTexts(title, ownership, minTarAge, maxTarAge) {
     let unfilUnselTexts = getUnfilteredUnselectedTexts();
     let filter = new Filter(unfilUnselTexts, title, ownership, minTarAge, maxTarAge);
     unselTexts = filter.filteredTexts;
-    // Display first page of texts
-    displayUnselectedTexts(0);
-    displaySelectedTexts(0);
+    // Display first page of filtered texts
+    displayUnselectedTexts(1);
 }
 
 function getUnfilteredUnselectedTexts() {
@@ -22,13 +21,16 @@ function getUnfilteredUnselectedTexts() {
     }
 }
 
-function displayUnselectedTexts() {
+function displayUnselectedTexts(pageNumber) {
     // Define a list of unselected titles
     let titles = Object.keys(unselTexts);
+    if ((pageNumber * textRows) > titles.length) {
+        pageNumber = Object.keys(unselTexts).length;
+    }
     // Use the list to display texts
     for (let i = 0; i < textRows; i++) {
         let cell = document.getElementByID("unsel_" + i);
-        let textIndex = ((unselPageNumber-1) * textRows) + i;
+        let textIndex = ((pageNumber-1) * textRows) + i;
         if (textIndex >= title.length) {
             // Hide empty cells
             cell.hidden = "hidden";
@@ -49,46 +51,39 @@ function displayUnselectedTexts() {
             }
         }
     }
-    updateNavSel("unsel");
+    // Update the navigator
+    updateNavSel(document.getElementByID("unsel_nav"), unselTexts.length, pageNumber);
 }
 
-function displaySelectedTexts() {
+function displaySelectedTexts(pageNumber) {
     // Use the selected texts list to display texts
     for (let i = 0; i < textRows; i++) {
         let cell = document.getElementByID("sel_" + i);
-        let textIndex = (selPageNumber*textRows) + i;
+        let textIndex = (pageNumber*textRows) + i;
         if (textIndex >= title.length) {
             // Hide empty cells
             cell.hidden = "hidden";
         } else {
             // Unhide non-empty cell
             cell.removeAttribute("hidden");
-            for (let version of unselTexts[title]) {
+            for (let version of selTexts[title]) {
 
             }
         }
     }
-    updateNavSel("sel");
+    // Update the navigator
+    updateNavSel(document.getElementByID("sel_nav"), selTexts.length, pageNumber);
 }
 
-function updateNavSel(id) {
-    // Find the desired navigator
-    let navSel = document.getElementByID(id + "_nav");
-    // Find the number of viewable texts
-    let textQuant;
-    if (id == "unsel") {
-        textQuant = unselTexts.length;
-    } else {
-        textQuant = selTexts.length;
-    }
-    // Calculate the number of required pages
+function updateNavSel(sel, textQuant, pageNumber) {
+    // Define which
     let pageQuant = Math.Ceil(textQuant / textRows);
-    // Update the selector
-    for (let i = 0; i < pageQuant; i++) {
+    sel.innerHTML = "";
+    for (let i = 1; i <= pageQuant; i++) {
         let navOpt = document.createElement("option");
         navOpt.value = i;
         navOpt.innerText = i;
-        if (p)
+        if (i === pageNumber) navOpt.selected = "selected";
         navSel.appendChild(navOpt);
     }
 }
@@ -159,17 +154,8 @@ class Filter {
 
 }
 
-function setUnselectedPage(pageNumber) {
-    unselPageNumber = pageNumber;
-    displayUnselectedTexts();
-}
-
-function setSelectedPage(pageNumber) {
-    selPageNumber = pageNumber;
-    displaySelectedTexts();
-}
-
 function select(title, version) {
+    //
     for (title of selTexts) {
         for (version of selTexts[title]) {
             versions.push({
@@ -178,10 +164,8 @@ function select(title, version) {
             });
         }
     }
-    // Ensure no out of bounds page
-    if ((unselPageNumber * textRows) > titles.length) unselPageNumber = Object.keys(unselTexts).length;
-    // Upadte display
-    displaySelectedTexts();
+    // Update display
+    displayUnselectedTexts();
     displaySelectedTexts();
 }
 

@@ -6,7 +6,7 @@ function postRequest(data, url, success, failure) {
     try {
         // most browsers
         req = new XMLHttpRequest();
-    } catch (e){
+    } catch (e) {
         // IE
         try{
             req = new ActiveXObject('Msxml2.XMLHTTP');
