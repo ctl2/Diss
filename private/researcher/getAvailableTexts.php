@@ -8,7 +8,7 @@
     function getAvailableTexts($conn, $username) {
 
         $sql = "SELECT title, version, uploader, isPublic, targetAgeMin, targetAgeMax, targetGender"
-            . " FROM Text"
+            . " FROM Text, Version"
             . " WHERE uploader='$username' OR isPublic=" . true
             . " ORDER BY title ASCENDING";
 
@@ -19,10 +19,10 @@
             $title = $textRow["title"];
             if (!array_key_exists($title, $texts)) {
                 $texts[$title] = array();
+                $texts[$title]["uploader"] = $textRow["uploader"];
+                $texts[$title]["isOwned"] = ($username == $textRow["uploader"]),
             }
-            $texts[$title][$textRow["version"]]; = array(
-                "uploader" => $textRow["uploader"],
-                "isOwned" => $username == $textRow["uploader"],
+            $texts[$title]["versions"][$textRow["version"]]; = array(
                 "isPublic" => $textRow["isPublic"],
                 "targetAgeMin" => $textRow["targetAgeMin"],
                 "targetAgeMax" => $textRow["targetAgeMax"],

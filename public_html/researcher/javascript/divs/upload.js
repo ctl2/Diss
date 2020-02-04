@@ -1,6 +1,31 @@
 'use strict';
 
-function showUploadDiv() {
+function showUploadDiv(isNewText) {
+    // Prepare the title and version input elements
+    let title_el = document.getElementByID("up_title");
+    let ver_el = document.getElementByID("up_ver");
+    if (isNewText) {
+        // Title is blank and enabled
+        title_el.value = "";
+        title_el.removeAttribute("disabled");
+        // Version = 1
+        ver_el.innerText = "1";
+    } else {
+        // Title is set and disabled
+        let title = Object.keys(selTexts)[0];
+        title_el.value = title;
+        title_el.disabled = "disabled";
+        // Find the highest current version
+        let highestVersion = 0;
+        for (let version in selTexts[title]) {
+            if (version > highestVersion) highestVersion = version;
+        }
+        // Version = highest + 1
+        ver_el.innerText = highestVersion + 1;
+    }
+    // Reset all other elements
+    document.getElementByID("upload").innerText =
+    // Show only the upload div
     hideDivs();
     document.getElementByID("upload").removeAttribute('hidden');
 }
@@ -15,9 +40,19 @@ function upload() {
 
 
 
-    postRequest(["value"=>title_el.value], "../../private/researcher/checkTitleAvailability.php", );
+    postRequest(["title"=>title_el.value], "../../private/researcher/checkTitleAvailability.php", success, alert);
 
 
+}
+
+success(responseText) {
+    if (responseText == true) {
+        document.getElementByID("up_reset").reset();
+        document.getElementByID("up_ver").innerText = "";
+        alert("New text successfully uploaded!");
+    } else {
+        alert(responseText);
+    }
 }
 
 class Validator {

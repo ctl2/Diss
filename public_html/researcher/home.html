@@ -26,62 +26,69 @@
     <body>
 
         <div id="top">
-            <input class="button" onclick="showUploadDiv()" value="New Text" />
-            <input class="button" onclick="showFilterDiv()" value="Filter" />
-            <input class="button" onclick="showViewDetailsDiv()" value="View Details" disabled />
-            <input class="button" onclick="showAnalyseDiv()" value="Analyse" disabled />
-            <input class="button" onclick="showCompareDiv()" value="Compare" disabled />
+            <input id="but_fil" class="button" onclick="showFilterDiv()" value="Filter" />
+            <input id="but_new" class="button" onclick="showUploadDiv(true)" value="New Text" />
+            <input id="but_ver" class="button" onclick="showUploadDiv(false)" value="New Version" disabled />
+            <input id="but_view" class="button" onclick="showViewDetailsDiv()" value="View Details" disabled />
+            <input id="but_ana" class="button" onclick="showAnalyseDiv()" value="Analyse" disabled />
+            <input id="but_comp" class="button" onclick="showCompareDiv()" value="Compare" disabled />
+            <input id="but_hide" class="button" onclick="hideDivs()" value="Hide" />
         </div>
 
-        <div id="middle">
-
-            <div id="upload" hidden>
-
-                <div class="left">
-                    Title <input id="up_title" type="text" /><br>
-                    File <input id="up_file" type="file" />
-                </div>
-
-                <div class="right">
-
-                    Minimum Target Age
-                    <input type="checkbox" onchange="up_min_age.disabled = !up_min_age.disabled;" />
-                    <input id="up_min_age" type="number" disabled /><br>
-
-                    Maximum Target Age
-                    <input type="checkbox" onchange="up_max_age.disabled = !up_max_age.disabled;" />
-                    <input id="up_max_age" type="number" disabled /><br>
-
-                    Make Text and Associated Reading Data Public
-                    <input id="up_isPublic" type="checkbox" />
-
-                </div>
-
-                <input type="button" onclick="upload()" value="Upload" />
-
-            </div>
+        <div id="middle"></div>
 
             <div id="filter" hidden>
 
+                <form id="fil_reset"></form>
+
                 Title Keywords
-                <input id="fil_search" type="text" placeholder="Search" /><br>
+                <input id="fil_search" form="fil_reset" type="text" placeholder="Search" /><br>
 
                 Ownership
-                <select id="fil_type">
+                <select id="fil_type" form="fil_reset">
                     <option value="owned">Me</option>
                     <option value="unowned">Not Me</option>
                     <option value="all">All</option>
                 </select><br>
 
                 Minimum target age
-                <input id="fil_min_age" type="number" value="0" />
+                <input id="fil_min_age" form="fil_reset" type="number" value="0" />
 
                 Maximum target age
-                <input id="fil_max_age" type="number" value="255" />
+                <input id="fil_max_age" form="fil_reset" type="number" value="255" />
 
                 <input id="filter_button" type="button"
                 onclick="filterTexts(fil_search.value, fil_type.value, fil_min_age.value, fil_max_age.value)"
                 value="Filter" />
+
+            </div>
+
+            <div id="upload" hidden>
+
+                <form id="up_reset"></form>
+
+                <div class="left">
+                    Title <input id="up_title" form="up_reset" type="text" /><br>
+                    Version <div id="up_ver"></div>
+                    File <input id="up_file" form="up_reset" type="file" />
+                </div>
+
+                <div class="right">
+
+                    Minimum Target Age
+                    <input form="up_reset" type="checkbox" onchange="up_min_age.disabled = !up_min_age.disabled;" />
+                    <input id="up_min_age" form="up_reset" type="number" disabled /><br>
+
+                    Maximum Target Age
+                    <input form="up_reset" type="checkbox" onchange="up_max_age.disabled = !up_max_age.disabled;" />
+                    <input id="up_max_age" form="up_reset" type="number" disabled /><br>
+
+                    Make Text and Associated Reading Data Public
+                    <input id="up_isPublic" form="up_reset" type="checkbox" />
+
+                </div>
+
+                <input type="button" onclick="upload()" value="Upload" />
 
             </div>
 
@@ -119,7 +126,6 @@
                 <h2 id="an_title"></h2>
                 <br>
 
-                <select id="an_version_sel"></select>
                 <select id="an_average_sel">
                     <option value="mean">Mean</option>
                     <option value="median">Median</option>
@@ -139,14 +145,14 @@
                 </select>
                 <br>
 
-                <select id="an_gender_sel">
+                <select id="an_gender_sel" form="an_reset">
                     <option value="all">All</option>
                     <option value="male">Male</option>
-                    <option value="femail">Female</option>
+                    <option value="female">Female</option>
                 </select>
                 <div>
-                    Minimum age: <input type="number" id="an_min_age_sel" />
-                    Maximum age: <input type="number" id="an_max_age_sel" />
+                    Minimum age: <input id="an_min_age_sel" form="an_reset" type="number" />
+                    Maximum age: <input id="an_max_age_sel" form="an_reset" type="number" />
                 </div>
                 <input type="button" onclick="download()" value="Download" />
 

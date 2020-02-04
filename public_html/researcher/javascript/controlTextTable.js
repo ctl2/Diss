@@ -12,13 +12,23 @@ function filterTexts(title, ownership, minTarAge, maxTarAge) {
     unselTexts = filter.filteredTexts;
     // Display first page of filtered texts
     displayUnselectedTexts(1);
+    // Reset the filter div
+    document.getElementByID("fil_reset").reset();
 }
 
 function getUnfilteredUnselectedTexts() {
-    let unfilUnselTexts = {};
-    for (let title of allTexts) {
-        if (unselTexts)
+    // Make a shallow copy of the full text list
+    let unfilUnselTexts = Object.assign({}, allTexts);
+    // Remove all selected text versions
+    for (let selText in selTexts) {
+        let unfilUnselText = unfilUnselTexts[selText.title];
+        let unfilUnselVer = unfilUnselText.versions;
+        delete unfilUnselVer[selText.version];
+        // Remove the whole text if all versions have been removed
+        if (Object.keys(unfilUnselVer).length == 0) delete unfilUnselText;
     }
+    // Return the resulting list
+    return unfilUnselTexts;
 }
 
 function displayUnselectedTexts(pageNumber) {
@@ -31,8 +41,8 @@ function displayUnselectedTexts(pageNumber) {
     for (let i = 0; i < textRows; i++) {
         let cell = document.getElementByID("unsel_" + i);
         let textIndex = ((pageNumber-1) * textRows) + i;
-        if (textIndex >= title.length) {
-            // Hide empty cells
+        if (textIndex >= titles.length) {
+            // Hide empty cell
             cell.hidden = "hidden";
         } else {
             // Unhide non-empty cell
@@ -40,7 +50,7 @@ function displayUnselectedTexts(pageNumber) {
             // Display title
             let titleDiv = document.getElementById("unsel_title_" + i);
             let title = titles[textIndex];
-            titleDiv.innerHTML = title;
+            titleDiv.innerText = title;
             // Display version options
             let verSel = document.getElementById("unsel_ver_" + i);
             for (let version of unselTexts[title]) {
@@ -60,15 +70,16 @@ function displaySelectedTexts(pageNumber) {
     for (let i = 0; i < textRows; i++) {
         let cell = document.getElementByID("sel_" + i);
         let textIndex = (pageNumber*textRows) + i;
-        if (textIndex >= title.length) {
-            // Hide empty cells
+        if (textIndex >= selTexts.length) {
+            // Hide empty cell
             cell.hidden = "hidden";
         } else {
             // Unhide non-empty cell
             cell.removeAttribute("hidden");
-            for (let version of selTexts[title]) {
-
-            }
+            // Display info
+            let text = selTexts[textIndex];
+            document.getElementById("sel_title_" + i).innerText = text.title;
+            document.getElementById("sel_ver_" + i).innerText = text.version;
         }
     }
     // Update the navigator
@@ -76,13 +87,15 @@ function displaySelectedTexts(pageNumber) {
 }
 
 function updateNavSel(sel, textQuant, pageNumber) {
-    // Define which
+    // Calculate the required number of pages
     let pageQuant = Math.Ceil(textQuant / textRows);
+    // Make one selector option for each page
     sel.innerHTML = "";
     for (let i = 1; i <= pageQuant; i++) {
         let navOpt = document.createElement("option");
         navOpt.value = i;
         navOpt.innerText = i;
+        // Maintain user page selection
         if (i === pageNumber) navOpt.selected = "selected";
         navSel.appendChild(navOpt);
     }
@@ -108,12 +121,12 @@ class Filter {
         // Loop through available texts.
         for (let title in texts) {
             if (!this.passesTitleFilter(title, filter.titleKeywords)) continue;
+            if (!this.passesOwnershipFilter(texts[title].isOwned, filter.ownership)) continue;
             // Define accepted version collection.
             let acceptedVersions = [];
             // loop through versions.
             let text = texts[title];
-            for (let version in text) {
-                if (!this.passesOwnershipFilter(text[version].isOwned, filter.ownership)) continue;
+            for (let version of text.versions) {
                 if (!this.passesMinAgeFilter(text[version].targetAgeMin, filter.minTarAge)) continue;
                 if (!this.passesMaxAgeFilter(text[version].targetAgeMax, filter.maxTarAge)) continue;
                 // Accept this text=>version combo.
@@ -155,18 +168,19 @@ class Filter {
 }
 
 function select(title, version) {
-    //
-    for (title of selTexts) {
-        for (version of selTexts[title]) {
-            versions.push({
-                title: title,
-                version: version
-            });
-        }
-    }
+    // Remove the version from the unselected texts list
+    unselTexts[title].splice(unselTexts[title].indexOf(version), 1);
+    if (unselTexts[title].length === 0) delete unselTexts[title];
+    // Add the version to the selected texts list
+    selTexts.push({
+        title: title,
+        version: version
+    });
     // Update display
     displayUnselectedTexts();
     displaySelectedTexts();
+    // Update buttons
+    updateDivButtons();
 }
 
 function unselect(title, version) {

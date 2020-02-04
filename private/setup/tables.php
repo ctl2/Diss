@@ -101,14 +101,27 @@
         $tableName = "Text";
         $sql = "CREATE TABLE $tableName (
             title VARCHAR(30) NOT NULL,
+            uploader VARCHAR(10) NOT NULL
+            PRIMARY KEY (title),
+            FOREIGN KEY (uploader) references Researcher(username) ON UPDATE cascade ON DELETE cascade
+        ) ENGINE=InnoDB";
+
+        makeQuery($conn, $sql, $tableName, "created");
+
+    }
+
+    function createVersionTable($conn) {
+
+        $tableName = "Version";
+        $sql = "CREATE TABLE $tableName (
+            title VARCHAR(30) NOT NULL,
             version TINYINT NOT NULL DEFAULT 1, # 0 to 255
-            uploader VARCHAR(10) NOT NULL,
             isPublic BINARY NOT NULL,
             targetAgeMin TINYINT,
             targetAgeMax TINYINT,
             targetGender CHAR,
             PRIMARY KEY (title, version),
-            FOREIGN KEY (uploader) references Researcher(username) ON UPDATE cascade ON DELETE cascade
+            FOREIGN KEY (title) references Text(title) ON UPDATE cascade ON DELETE cascade
         ) ENGINE=InnoDB";
 
         makeQuery($conn, $sql, $tableName, "created");
@@ -124,8 +137,8 @@
             index SMALLINT NOT NULL, # -32,768 to 32,767
             char CHAR,
             PRIMARY KEY (title, version, index),
-            FOREIGN KEY (title) references Text(title) ON UPDATE cascade ON DELETE cascade,
-            FOREIGN KEY (version) references Text(version) ON UPDATE cascade ON DELETE cascade
+            FOREIGN KEY (title) references Version(title) ON UPDATE cascade ON DELETE cascade,
+            FOREIGN KEY (version) references Version(version) ON UPDATE cascade ON DELETE cascade
         ) ENGINE=InnoDB";
 
         makeQuery($conn, $sql, $tableName, "created");
@@ -146,9 +159,9 @@
             PRIMARY KEY (reader, textTitle, textVersion, readIndex),
             FOREIGN KEY (reader) references Reader(username) ON UPDATE cascade ON DELETE restrict,
             # ON DELETE set null would be preferable but setting values in the 'reader' column to null would cause non-unique table entries.
-            FOREIGN KEY (textTitle) references Text(title) ON UPDATE cascade ON DELETE cascade,
-            FOREIGN KEY (textVersion) references Text(version) ON UPDATE cascade ON DELETE cascade,
-            FOREIGN KEY (charIndex) references Text(index) ON UPDATE cascade ON DELETE cascade
+            FOREIGN KEY (textTitle) references TextChar(title) ON UPDATE cascade ON DELETE cascade,
+            FOREIGN KEY (textVersion) references TextChar(version) ON UPDATE cascade ON DELETE cascade,
+            FOREIGN KEY (charIndex) references TextChar(index) ON UPDATE cascade ON DELETE cascade
         ) ENGINE=InnoDB";
 
         makeQuery($conn, $sql, $tableName, "created");
@@ -159,6 +172,7 @@
 
     dropCharReadTable($conn);
     dropTextCharTable($conn);
+    dropVersionTable($conn);
     dropTextTable($conn);
     dropReviewTable($conn);
     dropApplicantTable($conn);
@@ -172,6 +186,7 @@
     createApplicantTable($conn);
     createReviewTable($conn);
     createTextTable($conn);
+    createVersionTable($conn);
     createTextCharTable($conn);
     createCharReadTable($conn);
 
