@@ -1,14 +1,13 @@
 function hideDivs() {
-    var divs = array(
-        document.getElementByID("filter"),
-        document.getElementByID("upload"),
-        document.getElementByID("view"),
-        document.getElementByID("analyse"),
-        document.getElementByID("compare")
-    );
-    for (let div in divs) {
+    // Get an array of hidable div names
+    var divNames = array("fil", "up", "view", "an", "comp");
+    // Hide any unhidden divs
+    for (let divName of divNames) {
+        let div = document.getElementById(divName);
         if (!div.hasAttribute("hidden")) {
             div.hidden = "hidden";
+            let resetForm = document.getElementById(divName + "_reset");
+            if (resetForm !== null) resetForm.reset();
         }
     }
 }
@@ -29,6 +28,11 @@ function updateDivButtons() {
             break;
         case 1:
             let selTextTitle = selTexts[0].title;
+            if (allTexts[selTextTitle].isOwned == true) {
+                verButton.removeAttribute("disabled");
+            } else {
+                verButton.disabled = "disabled";
+            }
             viewButton.removeAttribute("disabled");
             anButton.removeAttribute("disabled");
             compButton.disabled = "disabled";

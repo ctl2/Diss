@@ -11,33 +11,33 @@
 
         </style>
 
-        <script type="text/javascript" source="../lib/ajax.js"></script>
-        <script type="text/javascript" source="setup.js" defer></script>
-        <script type="text/javascript" source="controlTexts.js" defer></script>
-        <script type="text/javascript" source="search.js" defer></script>
-        <script type="text/javascript" source="divs/lib.js"></script>
-        <script type="text/javascript" source="divs/upload.js"></script>
-        <script type="text/javascript" source="divs/viewDetails.js"></script>
-        <script type="text/javascript" source="divs/analyse.js"></script>
-        <script type="text/javascript" source="divs/compare.js"></script>
+        <script type="text/javascript" src="../lib/ajax.js"></script>
+        <script type="text/javascript" src="javascript/setup.js" defer></script>
+        <script type="text/javascript" src="javascript/controlTexts.js" defer></script>
+        <script type="text/javascript" src="javascript/search.js" defer></script>
+        <script type="text/javascript" src="javascript/divs/lib.js"></script>
+        <script type="text/javascript" src="javascript/divs/upload.js"></script>
+        <script type="text/javascript" src="javascript/divs/viewDetails.js"></script>
+        <script type="text/javascript" src="javascript/divs/analyse.js"></script>
+        <script type="text/javascript" src="javascript/divs/compare.js"></script>
 
     </head>
 
     <body>
 
         <div id="top">
-            <input id="but_fil" class="button" onclick="showFilterDiv()" value="Filter" />
-            <input id="but_new" class="button" onclick="showUploadDiv(true)" value="New Text" />
-            <input id="but_ver" class="button" onclick="showUploadDiv(false)" value="New Version" disabled />
-            <input id="but_view" class="button" onclick="showViewDetailsDiv()" value="View Details" disabled />
-            <input id="but_ana" class="button" onclick="showAnalyseDiv()" value="Analyse" disabled />
-            <input id="but_comp" class="button" onclick="showCompareDiv()" value="Compare" disabled />
-            <input id="but_hide" class="button" onclick="hideDivs()" value="Hide" />
+            <input id="but_fil" type="button" onclick="showFilterDiv()" value="Filter" />
+            <input id="but_new" type="button" onclick="showUploadDiv(true)" value="New Text" />
+            <input id="but_ver" type="button" onclick="showUploadDiv(false)" value="New Version" disabled />
+            <input id="but_view" type="button" onclick="showViewDetailsDiv()" value="View Details" disabled />
+            <input id="but_ana" type="button" onclick="showAnalyseDiv()" value="Analyse" disabled />
+            <input id="but_comp" type="button" onclick="showCompareDiv()" value="Compare" disabled />
+            <input id="but_hide" type="button" onclick="hideDivs()" value="Hide" />
         </div>
 
         <div id="middle"></div>
 
-            <div id="filter" hidden>
+            <div id="fil" hidden>
 
                 <form id="fil_reset"></form>
 
@@ -63,12 +63,12 @@
 
             </div>
 
-            <div id="upload" hidden>
+            <div id="up" hidden>
 
                 <form id="up_reset"></form>
 
                 <div class="left">
-                    Title <input id="up_title" form="up_reset" type="text" /><br>
+                    Title <input id="up_title" type="text" /><br>
                     Version <div id="up_ver"></div>
                     File <input id="up_file" form="up_reset" type="file" />
                 </div>
@@ -94,34 +94,18 @@
 
             <div id="view" hidden>
 
-                <h2 id="view_title"></h2>
-                <br>
-
-                <table id="view_table">
-                    <tr>
-                        <td>Version</td>
-                        <td><select id="view_version_sel"></select></td>
-                    </tr>
-                    <tr>
-                        <td>Target Age Range</td>
-                        <td><div id="view_age_range"></div></td>
-                    </tr>
-                    <tr>
-                        <td>Target Gender</td>
-                        <td><div id="view_gender"></div></td>
-                    </tr>
-                    <tr>
-                        <td>Privacy Level</td>
-                        <td><div id="view_privacy"></div></td>
-                    </tr>
-                    <tr>
-                        <td id="view_text" colspan="2"><td>
-                    </tr>
-                </table>
+                Title: <div id="view_title"></div><br>
+                Version: <div id="view_ver"></div><br>
+                Uploader: <select id="view_uploader"></select><br>
+                Privacy Level: <div id="view_privacy"></div><br>
+                Target Age Range: <div id="view_age_range"></div><br>
+                Target Gender: <div id="view_gender"></div><br>
+                Text: <br>
+                <div id="view_text"></div><br>
 
             </div>
 
-            <div id="analyse" hidden>
+            <div id="an" hidden>
 
                 <h2 id="an_title"></h2>
                 <br>
@@ -160,7 +144,7 @@
 
             </div>
 
-            <div id="compare" hidden>
+            <div id="comp" hidden>
 
                 <select id="comp_average_sel">
                     <option value="mean">Mean</option>

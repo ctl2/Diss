@@ -10,8 +10,8 @@
         <style>
 
         </style>
-        <script type="text/javascript" source="../lib/ajax.js"></script>
-        <script type="text/javascript" source="../lib/login.js"></script>
+        <script type="text/javascript" src="../lib/ajax.js"></script>
+        <script type="text/javascript" src="../lib/login.js"></script>
         <script type="text/javascript">
             function attemptLogin(username_el, password_el) {
                 postRequest([username_el, password_el].map(el => el.id + '=' + el.value), "../../private/login/login.php", login, alert);

@@ -147,21 +147,22 @@
 
     function createCharReadTable($conn) {
 
-        $tableName = "CharRead";
+        $tableName = "Fixation";
         $sql = "CREATE TABLE $tableName (
             reader VARCHAR(10) NOT NULL,
             textTitle VARCHAR(30) NOT NULL,
             textVersion TINYINT NOT NULL DEFAULT 1, # 0 to 255
-            readIndex SMALLINT NOT NULL,
-            charIndex SMALLINT NOT NULL,
+            fixationIndex SMALLINT NOT NULL,
+            windowStartIndex SMALLINT NOT NULL,
+            windowEndIndex SMALLINT NOT NULL,
             duration TIME NOT NULL,
             char CHAR,
             PRIMARY KEY (reader, textTitle, textVersion, readIndex),
             FOREIGN KEY (reader) references Reader(username) ON UPDATE cascade ON DELETE restrict,
-            # ON DELETE set null would be preferable but setting values in the 'reader' column to null would cause non-unique table entries.
             FOREIGN KEY (textTitle) references TextChar(title) ON UPDATE cascade ON DELETE cascade,
             FOREIGN KEY (textVersion) references TextChar(version) ON UPDATE cascade ON DELETE cascade,
-            FOREIGN KEY (charIndex) references TextChar(index) ON UPDATE cascade ON DELETE cascade
+            FOREIGN KEY (windowStartIndex) references TextChar(index) ON UPDATE cascade ON DELETE cascade,
+            FOREIGN KEY (windowEndIndex) references TextChar(index) ON UPDATE cascade ON DELETE cascade
         ) ENGINE=InnoDB";
 
         makeQuery($conn, $sql, $tableName, "created");

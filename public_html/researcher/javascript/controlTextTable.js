@@ -17,10 +17,10 @@ function filterTexts(title, ownership, minTarAge, maxTarAge) {
 }
 
 function getUnfilteredUnselectedTexts() {
-    // Make a shallow copy of the full text list
-    let unfilUnselTexts = Object.assign({}, allTexts);
+    // Make a deep copy of the full text list. Necessary to avoid deleting attributes from the original
+    let unfilUnselTexts = JSON.parse(JSON.stringify(allTexts));
     // Remove all selected text versions
-    for (let selText in selTexts) {
+    for (let selText of selTexts) {
         let unfilUnselText = unfilUnselTexts[selText.title];
         let unfilUnselVer = unfilUnselText.versions;
         delete unfilUnselVer[selText.version];
@@ -53,7 +53,7 @@ function displayUnselectedTexts(pageNumber) {
             titleDiv.innerText = title;
             // Display version options
             let verSel = document.getElementById("unsel_ver_" + i);
-            for (let version of unselTexts[title]) {
+            for (let version in unselTexts[title].versions) {
                 let verOpt = document.createElement("option");
                 verOpt.value = version;
                 verOpt.innerText = version;
@@ -126,9 +126,9 @@ class Filter {
             let acceptedVersions = [];
             // loop through versions.
             let text = texts[title];
-            for (let version of text.versions) {
-                if (!this.passesMinAgeFilter(text[version].targetAgeMin, filter.minTarAge)) continue;
-                if (!this.passesMaxAgeFilter(text[version].targetAgeMax, filter.maxTarAge)) continue;
+            for (let version in text.versions) {
+                if (!this.passesMinAgeFilter(text.versions[version].targetAgeMin, filter.minTarAge)) continue;
+                if (!this.passesMaxAgeFilter(text.versions[version].targetAgeMax, filter.maxTarAge)) continue;
                 // Accept this text=>version combo.
                 acceptedVersions.push(version);
             }

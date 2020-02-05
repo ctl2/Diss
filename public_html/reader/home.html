@@ -8,9 +8,22 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
         <style>
-            
+
+            #text {
+                font: 14px lucida-console, monospace;
+                white-space: nowrap;
+            }
+
+            .line, .char {
+                --paddingSize: 15px;
+                padding-top: var(--paddingSize);
+                padding-bottom: var(--paddingSize);
+            }
+
         </style>
-        <script type="text/javascript" source="../lib/ajax.js"></script>
+
+        <script type="text/javascript" src="../lib/ajax.js"></script>
+        <script type="text/javascript" src="text.js" defer></script>
 
     </head>
 
@@ -21,14 +34,11 @@
         </div>
 
         <div class="middle">
-            <!-- Javascript is used to fill this div with researcher texts. -->
+            <div id="text"></div>
         </div>
 
         <div class="bottom">
-
-            Not registered yet?<br>
-            <input class="button" onclick="location.href='user/register.php';" value="Finish" />
-
+            <input id="text_but" type="button" onclick="location.href='user/register.php';" value="Finish" disabled />
         </div>
 
     </body>

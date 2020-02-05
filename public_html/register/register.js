@@ -1,6 +1,6 @@
 'use strict';
 
-register(username_el, password1_el, password2_el, acc_type_el, info_els) {
+function register(username_el, password1_el, password2_el, acc_type_el, info_els) {
 
     var input_els = [acc_type_el, username_el, password1_el, password2_el].concat(info_els);
 

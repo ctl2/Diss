@@ -23,32 +23,39 @@ function showUploadDiv(isNewText) {
         // Version = highest + 1
         ver_el.innerText = highestVersion + 1;
     }
-    // Reset all other elements
-    document.getElementByID("upload").innerText =
     // Show only the upload div
     hideDivs();
     document.getElementByID("upload").removeAttribute('hidden');
 }
 
 function upload() {
-
+    // Get references to user input elements
     let title_el = document.getElementByID("up_title");
     let file_el = document.getElementByID("up_file");
     let minAge_el = document.getElementByID("up_min_age");
     let maxAge_el = document.getElementByID("up_max_age");
     let isPublic_el = document.getElementByID("up_is_public");
-
-
-
-    postRequest(["title"=>title_el.value], "../../private/researcher/checkTitleAvailability.php", success, alert);
-
+    // Validate user inputs
+    let validator = new Validator(title_el, file_el, minAge_el, maxAge_el, isPublic_el);
+    validator.validate();
+    if (validator.hasOwnProperty("invalid")) {
+        // Tell the user how to correct their inputs
+        alert(validator.invalid.message);
+    } else {
+        let data = array(
+            "title=" + title_el.value,
+            "title=" + title_el.value,
+        );
+        postRequest(data, "../../private/researcher/upload.php", uploadSuccess, alert);
+    }
 
 }
 
-success(responseText) {
-    if (responseText == true) {
+function uploadSuccess(responseText) {
+    if (responseText == "") {
         document.getElementByID("up_reset").reset();
         document.getElementByID("up_ver").innerText = "";
+        hideDivs();
         alert("New text successfully uploaded!");
     } else {
         alert(responseText);
@@ -66,12 +73,18 @@ class Validator {
     }
 
     validate() {
-        // Perform validation tests in ascending order of importance so that less important messages will be overwritten.
+        // Perform validation tests in ascending order of importance to overwrite less important messages
         this.validateIsPublic();
         this.validateMaxAge();
         this.validateMinAge();
-        this.validateFile();
+        let fileReader = new FileReader();
+        this.validateFile(fileReader);
         this.validateTitle();
+        // Abort the file read operation if it has taken too long
+        if (fileReader.readyState !== 2) {
+            this.flagInvalid(file_el, "File took too long to load.");
+            fileReader.abort();
+        }
     }
 
     validateTitle() {
@@ -82,14 +95,13 @@ class Validator {
         }
     }
 
-    validateFile() {
+    validateFile(fileReader) {
         if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
             this.flagInvalid(file_el, "Your browser doesn't support the API's necessary to read files. Please switch to a more modern browser.");
         } else if (file_el.files.length == 0) {
             this.flagInvalid(file_el, "Please provide a text file.")
         } else {
-            var fileReader = new FileReader();
-            reader.onload = function() {
+            fileReader.onload = function() {
                 if (fileReader.result == "") {
                     this.flagInvalid(file_el, "Please provide a non-empty text file.");
                 } else if (fileReader.result.length > 30000) {
