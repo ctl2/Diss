@@ -6,6 +6,7 @@
     ini_set('display_errors', 1);
 
     include ("../lib/connectDB.php");
+    include ("../lib/accountExists.php");
 
     function createReaderAccount($conn, $username, $password, $dob, $gender, $dis) {
 

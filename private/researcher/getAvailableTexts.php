@@ -9,10 +9,13 @@
 
     function getAvailableTexts($conn, $username) {
 
-        $sql = "SELECT title, version, uploader, isPublic, targetAgeMin, targetAgeMax, targetGender"
-            . " FROM Text, Version"
-            . " WHERE uploader='$username' OR isPublic=" . true
-            . " ORDER BY title ASCENDING";
+        $sql = "
+            SELECT title, version, uploader, isPublic, targetAgeMin, targetAgeMax, targetGender
+            FROM Text,
+            INNER JOIN Version ON Version.title = Text.title AND Version.version = Text.version
+            WHERE uploader='$username' OR isPublic=" . true . "
+            ORDER BY Text.title ASCENDING
+        ";
 
         $textRows = mysqli_query($conn, $sql);
         $texts = array();
@@ -24,7 +27,7 @@
                 $texts[$title]["uploader"] = $textRow["uploader"];
                 $texts[$title]["isOwned"] = ($username == $textRow["uploader"]),
             }
-            $texts[$title]["versions"][$textRow["version"]]; = array(
+            $texts[$title][$textRow["version"]]; = array(
                 "isPublic" => $textRow["isPublic"],
                 "targetAgeMin" => $textRow["targetAgeMin"],
                 "targetAgeMax" => $textRow["targetAgeMax"],

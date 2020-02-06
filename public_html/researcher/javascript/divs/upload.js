@@ -46,7 +46,7 @@ function upload() {
             "title=" + title_el.value,
             "title=" + title_el.value,
         );
-        postRequest(data, "../../private/researcher/upload.php", uploadSuccess, alert);
+        postRequest(data, "../../private/researcher/uploadText.php", uploadSuccess, alert);
     }
 
 }

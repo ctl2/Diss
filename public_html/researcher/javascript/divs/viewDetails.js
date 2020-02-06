@@ -22,6 +22,6 @@ function showViewDetailsDiv() {
     document.getElementByID("view").removeAttribute('hidden');
 }
 
-function showText(text) {
-    document.getElementById("view_text").innerText = text;
+function showText(textString) {
+    document.getElementById("view_text").innerText = textString;
 }
