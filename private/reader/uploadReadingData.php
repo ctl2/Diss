@@ -6,62 +6,56 @@
     ini_set('display_errors', 1);
 
     include ("../lib/connectDB.php");
-    include ("../lib/accountExists.php");
+    include ("../lib/respond.php");
 
-    function createReaderAccount($conn, $username, $password, $dob, $gender, $dis) {
 
-        $sql = $conn->prepare("INSERT INTO Reader (username, password, dob, gender, dis) VALUES (?, ?, ?, ?, ?)");
-        $sql->bind_param("ssssi", $username, $password, $dob, $gender, $dis);
 
-        $sql->execute();
+    function createReadingEntry($conn, $title, $version, $reader, $availWidth, $availHeight) {
 
-    }
+        $sql = $conn->prepare("INSERT INTO Readings (title, version, reader, availWidth, availHeight) VALUES (?, ?, ?, ?, ?)");
+        if (!$sql->bind_param("sisii", $title, $version, $reader, $availWidth, $availHeight)) respond(false, "Execution failed: " + $conn->error);
 
-    function createResearcherAccount($conn, $username, $password, $email, $name) {
-
-        $sql = $conn->prepare("INSERT INTO Researcher (username, password, email, name) VALUES (?, ?, ?, ?)");
-        $sql->bind_param("ssss", $username, $password, $email, $name);
-
-        $sql->execute();
+        if (!$sql->execute()) respond(false, "Execution failed: " + $conn->error);
 
     }
 
-    function respond($message) {
-        echo $message;
-    }
+    function createLogEntry($conn, $title, $version, $reader, $log) {
 
-    if (isset($_POST["username"])) {
+        $sql = $conn->prepare("
+            INSERT INTO Windows (title, version, reader, index, leftmostCharIndex, rightmostCharIndex, openOffset, closeOffset)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+        if (!$sql->bind_param("sisiiidd", $title, $version, $reader, $readIndex, $windowStartIndex, $windowEndIndex, $openOffset, $closeOffset))
+            respond(false, "Execution failed: " + $conn->error);
 
-        $conn = connectDB();
-        $username = $_POST["username"];
-        $password1 = $_POST["password1"];
-
-        if (accountExists($conn, $username)) {
-            respond("Username is taken.");
-        } else {
-
-            if ($_POST["acc_type"]) == "reader") {
-
-                $dob = $_POST["dob"];
-                $gender = $_POST["gender"];
-                $dis = $_POST["dis"];
-
-                createReaderAccount($username, $password1, $dob, $gender, $dis);
-
-            } else {
-
-                $name = $_POST["name"];
-                $email = $_POST["email"];
-
-                createResearcherAccount($username, $password1, $name, $email);
-
-            }
-
-            $_SESSION["username"] = $username;
-            respond($_POST["acc_type"]);
-
+        for ($i = 0; $i < count($log); $i++) {
+            $readIndex = $i;
+            $logEntry =$log[$i];
+            $windowStartIndex = $logEntry['leftmostCharIndex'];
+            $windowEndIndex = $logEntry['rightmostCharIndex'];
+            $openOffset = $logEntry['openOffset'];
+            $closeOffset = $logEntry['closeOffset'];
+            if (!$sql->execute()) respond(false, "Execution failed: " + $conn->error);
         }
 
     }
+
+    $conn = connectDB();
+
+    $title = getPostVar("title");
+    $version = getPostVar("version");
+    $reader = $_SESSION['username'];
+    $availWidth = getPostVar("availWidth");
+    $availHeight = getPostVar("availHeight");
+    $log = json_decode(getPostVar("log"), true);
+
+    $conn->autocommit(FALSE);
+
+    createReadingEntry($conn, $title, $version, $reader, $availWidth, $availHeight);
+    createLogEntry($conn, $title, $version, $reader, $log);
+
+    if (!$mysqli->commit()) respond(false, "Commit failed: " + $conn->error);
+
+    respond(true, "");
 
 ?>

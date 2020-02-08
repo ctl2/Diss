@@ -13,6 +13,7 @@ class Session {
         this.text = text;
         this.currentWindow = [];
         this.leftmostUnshownCharIndex = 0;
+        document.getElementById("text_but").disabled = 'disabled';
         window.addEventListener('resize', drawCharacters);
         this.drawCharacters();
     }
@@ -58,8 +59,8 @@ class Session {
         let endIndex = Math.min(endCharIndex, endLineIndex);
         // Return the boundary points
         return {
-            startIndex: startIndex,
-            endIndex: endIndex
+            leftmostCharIndex: startIndex,
+            rightmostCharIndex: endIndex
         };
     }
 
@@ -67,16 +68,16 @@ class Session {
         // Get window boundary points
         let windowBoundaries = this.getWindowBoundaries(originCharIndex);
         // Check that no characters have been skipped
-        if (windowBoundaries.startIndex <= this.leftmostUnshownCharIndex) {
+        if (windowBoundaries.leftmostCharIndex <= this.leftmostUnshownCharIndex) {
             // Show characters
-            for (let i = windowBoundaries.startIndex; i <= windowBoundaries.endIndex; i++) {
+            for (let i = windowBoundaries.leftmostCharIndex; i <= windowBoundaries.rightmostCharIndex; i++) {
                 let charSpan = document.getElementById(this.charIdPrefix + "_" + i);
                 charSpan.innerText = this.text[i];
                 charSpan.classList.add("shown");
                 this.currentWindow.push(i);
             }
             // Update the boundary of seen text
-            this.leftmostUnshownCharIndex = Math.max(this.leftmostUnshownCharIndex, windowBoundaries.endIndex + 1);
+            this.leftmostUnshownCharIndex = Math.max(this.leftmostUnshownCharIndex, windowBoundaries.rightmostCharIndex + 1);
             if (this.leftmostUnshownCharIndex === text.length) document.getElementById("text_but").removeAttribute("disabled");
             // Start timing the window fixation
             this.timer.recordFixationStart(windowBoundaries);
@@ -103,8 +104,8 @@ class Session {
             // Set its properties
             charSpan.classList.add("char");
             charSpan.id = charIdPrefix + "_" + i;
-            charSpan.onmouseover = function() {openWindow(i)};
-            charSpan.onmouseout = function() {closeWindow()};
+            charSpan.onmouseover = function() {this.openWindow(i)};
+            charSpan.onmouseout = function() {this.closeWindow()};
             this.maskCharacter(i);
             // Handle word-ending characters
             if (this.isWhiteSpace(i)) {
@@ -130,29 +131,43 @@ class FixationTimer {
 
     log = [];
 
-    getCurrentTime() {
-        return new Date().getTime();
+    constructor() {
+        this.startTime = Date.now();
+        window.performance.mark("end");
     }
 
     recordFixationStart(windowBoundaries) {
+        window.performance.mark("start");
         this.log.push({
-            windowStartIndex: windowBoundaries.startIndex,
-            windowEndIndex: windowBoundaries.endIndex,
-            startTime: this.getCurrentTime()
+            leftmostCharIndex: windowBoundaries.leftmostCharIndex,
+            rightmostCharIndex: windowBoundaries.rightmostCharIndex,
+            openOffset: window.performance.measure("", "end", "start").duration;
         });
+        window.performance.clearMeasures("");
+        window.performance.clearMarks("end");
     }
 
     recordFixationEnd() {
-        this.log[this.log.length - 1].endTime = this.getCurrentTime();
+        window.performance.mark("end");
+        this.log[this.log.length - 1].closeOffset = window.performance.measure("", "start", "end").duration;
+        window.performance.clearMeasures("");
+        window.performance.clearMarks("start");
     }
 
     uploadLog() {
-        postRequest(["log=" + JSON.stringify(this.log)], '../../private/reader/uploadReadingData.php', this.success, alert);
+        postRequest([
+            "log=" + JSON.stringify(this.log),
+            "availWidth=" + window.screen.availWidth,
+            "availHeight=" + window.screen.availHeight
+            ], '../../private/reader/uploadReadingData.php', this.success, alert);
     }
 
-    success() {
-        if (window.confirm("Would you like to read another text?")) {
-            startSession();
+    success(response) {
+        let responseObject = JSON.parse(response);
+        if (responseObject.success == false) {
+            alert(responseObject.message);
+        } else if (window.confirm("Would you like to read another text?")) {
+            startNewSession();
         } else {
             logout();
         }
@@ -160,17 +175,80 @@ class FixationTimer {
 
 }
 
-var session = new Session();
+class MediaChecker {
 
-function uploadLog() {
-    postRequest(["log=" + JSON.stringify(this.log)], '../../private/reader/uploadReadingData.php', this.success, alert);
+    constructor() {
+    }
+
+    // See https://www.w3.org/TR/mediaqueries-4/#mf-interaction for hover/pointer media query documentation
+    checkPointer() {
+        if (window.matchMedia("(pointer: none)").matches) {
+            this.acceptable = false;
+            this.errorMessage = "your machine's primary input mechanism is not a pointing device";
+        } else if (window.matchMedia("(pointer: coarse)").matches) {
+            this.acceptable = false;
+            this.errorMessage = "your machine's primary input mechanism is not sufficiently accurate to permit a natural reading style";
+        }
+    }
+
+    checkHover() {
+        if (window.matchMedia("(hover: none)").matches) {
+            this.acceptable = false;
+            this.errorMessage = "your machine's primary input mechanism does not support hovering over words";
+        }
+    }
+
+    checkPerformance() {
+        if (!window.performance) {
+            this.acceptable = false;
+            this.errorMessage = "your browser does not support the API used for recording reading data";
+        }
+    }
+
+    isAcceptable() {
+        this.acceptable = true;
+        checkPointer();
+        checkHover();
+        checkPerformance();
+        return this.acceptable;
+    }
+
+    displayError() {
+        // Make a new div for displaying error text
+        let errorDiv = document.createElement("div");
+        errorDiv.classList.add("error");
+        errorDiv.innerText = "Sorry! You are not able to participate in reading studies. This is because "
+            + this.errorMessage
+            + ". Please switch to an appropriate machine/browser if you would like to participate."
+        // Display the div
+        let textDiv = document.getElementById("text");
+        textDiv.appendChild(errorDiv);
+    }
+
 }
 
-function startSession() {
-    var text = 'A computer-based eye-movement controlled, display system was developed for the study of perceptual processes in reading. A study was conducted to identify the region from which skilled readers pick up various types of visual information during a fixation while reading. This study involved making display changes, based on eye position, in the text pattern as the subject was in the act of reading from it, and then examining the effects these changes produced on eye behavior. The results indicated that the subjects acquired word-length pattern information at least 12 to 15 character positions to the right of the fixation point, and that this information primarily influenced saccade lengths. Specific letter- and word-shape information were acquired no further than 10 character positions to the right of the fixation point.'.split("");
+function start() {
+    let mediaChecker = new MediaChecker();
+    if (!mediaChecker.isAcceptable()) {
+        mediaChecker.displayError();
+    } else {
+        startNewReadingSession();
+    }
+}
 
+function startNewSession() {
+    // Get an unread text and pass it to the startSession function
+    postRequest(["log=" + JSON.stringify(this.log)], '../../private/reader/getUnreadTextString.php', startSession, alert);
+}
+
+function startSession(text) {
+    session = new Session(text);
 }
 
 function logout() {
     postRequest([], '../../private/lib/logout.php', () => location.href='../login/login.html'), alert);
 }
+
+var session;
+
+start();

@@ -40,7 +40,7 @@
             respond("Username is taken.");
         } else {
 
-            if ($_POST["acc_type"]) == "reader") {
+            if ($_POST["acc_type"] == "reader") {
 
                 $dob = $_POST["dob"];
                 $gender = $_POST["gender"];

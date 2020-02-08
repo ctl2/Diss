@@ -4,35 +4,32 @@
     ini_set('display_errors', 1);
 
     include ("../lib/connectDB.php");
+    include ("../lib/echoTextString.php");
 
     function echoUnreadTextString($conn, $reader) {
-
+        // Form an SQL query for the most recently uploaded text that the given reader hasn't yet read
         $sql = "
-            SELECT chara
-            FROM (
                 SELECT TOP 1 title, version
-                FROM Version, (
-                    SELECT DISTINCT title, version
-                    FROM VersionRead
+                FROM Version
+                WHERE NOT EXISTS (
+                    SELECT NULL
+                    INNER JOIN VersionRead ON Version.title = VersionRead.title AND Version.version = VersionRead.version
                     WHERE reader='$reader'
-                ) AS ReadTexts
-                WHERE NOT (Version.title = ReadTexts.title AND Version.version = ReadTexts.version)
-                ORDER BY ...
-            ) AS UnreadTexts
-            INNER JOIN VersionCharacter ON VersionCharacter.title = UnreadTexts.title AND VersionCharacter.version = UnreadTexts.version
-            ORDER BY index ASCENDING
+                )
+                ORDER BY uploadDate DESC
+            )
         ";
-
-        $dataRows = mysqli_query($conn, $sql);
-        $rowQuant = mysqli_num_rows($result);
-        if ($rowQuant > 0) {
-            $randomIndex = mt_rand(0, $rowQuant - 1);
-            mysqli_data_seek($result, $randomIndex);
-            $dataArray = $dataRows->fetch_all(MYSQLI_ASSOC);
-            $randomIndex = mt_rand(0, count($dataArray) - 1);
-
+        // Make the query
+        $textRows = mysqli_query($conn, $sql);
+        // Make sure that there is some text that this account hasn't read
+        if (mysqli_num_rows($result) > 0) {
+            $textRow = $readerRows->fetch_assoc();
+            // Record the title and version so that the client doesn't have to upload this information alongside new reading data
+            $_SESSION['title'] = $textRow['title'];
+            $_SESSION['version'] = $textRow['version'];
+            // Echo the text
+            echoTextString($conn, $_SESSION['title'], $_SESSION['version']);
         }
-
     }
 
     $conn = connectDB();
