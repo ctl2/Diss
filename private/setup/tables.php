@@ -72,8 +72,9 @@
             CREATE TABLE `$tableName` (
                 username VARCHAR(10) NOT NULL,
                 password VARCHAR(10) NOT NULL,
+                firstName VARCHAR(20) NOT NULL,
+                surname VARCHAR(20) NOT NULL,
                 email VARCHAR(30) NOT NULL,
-                name VARCHAR(30) NOT NULL,
                 PRIMARY KEY (username)
             ) ENGINE=InnoDB
         ";
@@ -88,8 +89,9 @@
         $sql = "
             CREATE TABLE `$tableName` (
                 username VARCHAR(10) NOT NULL,
+                firstName VARCHAR(20) NOT NULL,
+                surname VARCHAR(20) NOT NULL,
                 email VARCHAR(30) NOT NULL,
-                name VARCHAR(30) NOT NULL,
                 applicationDate DATETIME NOT NULL,
                 PRIMARY KEY (username),
                 FOREIGN KEY (username) references Researchers (username) ON UPDATE cascade ON DELETE cascade
@@ -141,11 +143,11 @@
         $sql = "
             CREATE TABLE `$tableName` (
                 title VARCHAR(30) NOT NULL,
-                version TINYINT NOT NULL,
+                version TINYINT UNSIGNED NOT NULL,
                 uploadDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 isPublic BINARY NOT NULL,
-                targetAgeMin TINYINT,
-                targetAgeMax TINYINT,
+                targetAgeMin TINYINT UNSIGNED,
+                targetAgeMax TINYINT UNSIGNED,
                 targetGender CHAR,
                 PRIMARY KEY (title, version),
                 FOREIGN KEY (title) references Texts (title) ON UPDATE cascade ON DELETE cascade
@@ -162,10 +164,10 @@
         $sql = "
             CREATE TABLE `$tableName` (
                 title VARCHAR(30) NOT NULL,
-                version TINYINT NOT NULL,
-                index SMALLINT NOT NULL,
+                version TINYINT UNSIGNED NOT NULL,
+                sequenceNumber SMALLINT UNSIGNED NOT NULL,
                 chara CHAR,
-                PRIMARY KEY (title, version, index),
+                PRIMARY KEY (title, version, sequenceNumber),
                 FOREIGN KEY (title, version) references Versions (title, version) ON UPDATE cascade ON DELETE cascade
             ) ENGINE=InnoDB
         ";
@@ -180,11 +182,11 @@
         $sql = "
             CREATE TABLE `$tableName` (
                 title VARCHAR(30) NOT NULL,
-                version TINYINT NOT NULL,
+                version TINYINT UNSIGNED NOT NULL,
                 reader VARCHAR(10) NOT NULL,
-                availWidth SMALLINT,
-                availHeight SMALLINT,
-                PRIMARY KEY (textTitle, textVersion, reader),
+                availWidth SMALLINT UNSIGNED NOT NULL,
+                availHeight SMALLINT UNSIGNED NOT NULL,
+                PRIMARY KEY (title, version, reader),
                 FOREIGN KEY (title, version) references Characters (title, version) ON UPDATE cascade ON DELETE cascade,
                 FOREIGN KEY (reader) references Readers (username) ON UPDATE cascade ON DELETE restrict
             ) ENGINE=InnoDB
@@ -201,20 +203,44 @@
             CREATE TABLE `$tableName` (
                 reader VARCHAR(10) NOT NULL,
                 title VARCHAR(30) NOT NULL,
-                version TINYINT NOT NULL,
-                index SMALLINT NOT NULL,
-                leftmostCharIndex SMALLINT NOT NULL,
-                rightmostCharIndex SMALLINT NOT NULL,
+                version TINYINT UNSIGNED NOT NULL,
+                sequenceNumber SMALLINT UNSIGNED NOT NULL,
+                leftmostChar SMALLINT UNSIGNED NOT NULL,
+                rightmostChar SMALLINT UNSIGNED NOT NULL,
                 -- Maximum offset time is 10 seconds
-                openOffset DECIMAL(7,2) NOT NULL,  -- The number of milliseconds between closing the previous window and opening this one
-                closeOffset DECIMAL(7,2) NOT NULL, -- The number of milliseconds between opening and closing this window
-                PRIMARY KEY (reader, textTitle, textVersion, readIndex),
+                openOffset DECIMAL(7,2) UNSIGNED NOT NULL,  -- The number of milliseconds between closing the previous window and opening this one
+                closeOffset DECIMAL(7,2) UNSIGNED NOT NULL, -- The number of milliseconds between opening and closing this window
+                PRIMARY KEY (reader, title, version, sequenceNumber),
                 FOREIGN KEY (reader, title, version) references Readings (reader, title, version) ON UPDATE cascade ON DELETE cascade,
-                FOREIGN KEY (leftmostCharIndex, rightmostCharIndex) references Characters (index, index) ON UPDATE cascade ON DELETE cascade
+                FOREIGN KEY (title, version, leftmostChar) references Characters (title, version, sequenceNumber) ON UPDATE cascade ON DELETE cascade,
+                FOREIGN KEY (title, version, rightmostChar) references Characters (title, version, sequenceNumber) ON UPDATE cascade ON DELETE cascade
             ) ENGINE=InnoDB
         ";
 
         makeQuery($conn, $sql, $tableName, "created");
+
+    }
+
+    function createIndexes($conn) {
+    }
+
+    function createViews($conn) {
+
+        $viewName = "Accounts";
+        $sql = "
+            CREATE OR REPLACE VIEW $viewName
+            AS
+                SELECT username, password, 'reader' as AccountType
+                FROM Readers
+                UNION ALL
+                SELECT username, password, 'researcher' as AccountType
+                FROM Researchers
+                UNION ALL
+                SELECT username, password, 'reviewer' as AccountType
+                FROM Reviewers
+        ";
+
+        makeQuery($conn, $sql, $viewName, "created");
 
     }
 
@@ -223,10 +249,13 @@
 
     $conn = connectDB();
 
+    echo 'DROPPING TABLES<br>';
     dropTables($conn);
+    echo '<br><br>';
 
+    echo 'CREATING TABLES<br>';
     createReaderTable($conn);
-    createReasearcherTable($conn);
+    createResearcherTable($conn);
     createReviewerTable($conn);
     createApplicantTable($conn);
     createReviewTable($conn);
@@ -235,7 +264,16 @@
     createCharacterTable($conn);
     createReadingTable($conn);
     createWindowTable($conn);
+    echo '<br><br>';
 
-    echo "FINISHED";
+    echo 'CREATING INDEXES<br>';
+    createIndexes($conn);
+    echo '<br><br>';
+
+    echo 'CREATING VIEWS<br>';
+    createViews($conn);
+    echo '<br><br>';
+
+    echo "FINISHED<br>";
 
 ?>

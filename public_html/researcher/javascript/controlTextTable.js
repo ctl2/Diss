@@ -13,7 +13,7 @@ function filterTexts(title, ownership, minTarAge, maxTarAge) {
     // Display first page of filtered texts
     displayUnselectedTexts(1);
     // Reset the filter div
-    document.getElementByID("fil_reset").reset();
+    document.getElementById("fil_reset").reset();
 }
 
 function getUnfilteredUnselectedTexts() {
@@ -25,7 +25,7 @@ function getUnfilteredUnselectedTexts() {
         let unfilUnselVer = unfilUnselText.versions;
         delete unfilUnselVer[selText.version];
         // Remove the whole text if all versions have been removed
-        if (Object.keys(unfilUnselVer).length == 0) delete unfilUnselText;
+        if (Object.keys(unfilUnselVer).length == 0) delete unfilUnselTexts[selText.title];
     }
     // Return the resulting list
     return unfilUnselTexts;
@@ -34,12 +34,9 @@ function getUnfilteredUnselectedTexts() {
 function displayUnselectedTexts(pageNumber) {
     // Define a list of unselected titles
     let titles = Object.keys(unselTexts);
-    if ((pageNumber * textRows) > titles.length) {
-        pageNumber = Object.keys(unselTexts).length;
-    }
     // Use the list to display texts
     for (let i = 0; i < textRows; i++) {
-        let cell = document.getElementByID("unsel_" + i);
+        let cell = document.getElementById("unsel_" + i);
         let textIndex = ((pageNumber-1) * textRows) + i;
         if (textIndex >= titles.length) {
             // Hide empty cell
@@ -62,13 +59,13 @@ function displayUnselectedTexts(pageNumber) {
         }
     }
     // Update the navigator
-    updateNavSel(document.getElementByID("unsel_nav"), unselTexts.length, pageNumber);
+    updateNavSel(document.getElementById("unsel_nav"), unselTexts.length, pageNumber);
 }
 
 function displaySelectedTexts(pageNumber) {
     // Use the selected texts list to display texts
     for (let i = 0; i < textRows; i++) {
-        let cell = document.getElementByID("sel_" + i);
+        let cell = document.getElementById("sel_" + i);
         let textIndex = (pageNumber*textRows) + i;
         if (textIndex >= selTexts.length) {
             // Hide empty cell
@@ -83,12 +80,12 @@ function displaySelectedTexts(pageNumber) {
         }
     }
     // Update the navigator
-    updateNavSel(document.getElementByID("sel_nav"), selTexts.length, pageNumber);
+    updateNavSel(document.getElementById("sel_nav"), selTexts.length, pageNumber);
 }
 
 function updateNavSel(sel, textQuant, pageNumber) {
     // Calculate the required number of pages
-    let pageQuant = Math.Ceil(textQuant / textRows);
+    let pageQuant = Math.ceil(textQuant / textRows);
     // Make one selector option for each page
     sel.innerHTML = "";
     for (let i = 1; i <= pageQuant; i++) {
@@ -104,7 +101,7 @@ function updateNavSel(sel, textQuant, pageNumber) {
 class Filter {
 
     constructor(texts, title, ownership, minTarAge, maxTarAge) {
-        this.filteredTexts = getFilteredTexts(
+        this.setFilteredTexts(
             texts,
             {
                 titleKeywords: title.split(" "),
@@ -115,9 +112,9 @@ class Filter {
         );
     }
 
-    getFilteredTexts(texts, filter) {
+    setFilteredTexts(texts, filter) {
         // Define accepted text collection
-        let filteredTexts = {};
+        this.filteredTexts = {};
         // Loop through available texts.
         for (let title in texts) {
             if (!this.passesTitleFilter(title, filter.titleKeywords)) continue;
@@ -133,10 +130,8 @@ class Filter {
                 acceptedVersions.push(version);
             }
             // Push the text and its accepted versions to the accepted texts collection.
-            if (acceptedVersions.length > 0) filterTexts[title] = acceptedVersions;
+            if (acceptedVersions.length > 0) this.filterTexts[title] = acceptedVersions;
         }
-        // Return the accepted texts=>versions.
-        return filterTexts;
     }
 
     // Title must contain every keyword.
@@ -150,9 +145,9 @@ class Filter {
     }
 
     passesOwnershipFilter(isOwned, ownershipFilter) {
-        if (ownership != "all") {
-            if (isOwned == false && ownership == "owned") return false;
-            if (isOwned == true && ownership == "unowned") return false;
+        if (ownershipFilter != "all") {
+            if (isOwned == false && ownershipFilter == "owned") return false;
+            if (isOwned == true && ownershipFilter == "unowned") return false;
         }
         return true;
     }

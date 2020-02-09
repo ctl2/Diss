@@ -1,11 +1,16 @@
-const textRows = 5;
-
-function setupTextTable(textsJSON) {
-    allTexts = JSON.parse(jsonString);
-    let textTable = document.getElementById("texts");
-    appendTextRows(textTable);
-    appendNavRow(textTable);
-    document.getElementById("filter_button").click();
+function setupTextTable(responseJSON) {
+    let response = JSON.parse(responseJSON);
+    if (response.success == false) {
+        alert(response.message);
+    } else {
+        allTexts = response.message;
+        unselTexts = {};
+        selTexts = [];
+        let textTable = document.getElementById("texts");
+        appendTextRows(textTable);
+        appendNavRow(textTable);
+        document.getElementById("filter_button").click();
+    }
 }
 
 function appendTextRows(table_el) {
@@ -21,6 +26,7 @@ function appendUnselectedTextCell(row_el, index) {
     // Make cell
     let textCell = document.createElement("td");
     textCell.classList.add("unselected");
+    textCell.id = "unsel_" + index;
     // Make title div
     let titleDiv = document.createElement("div");
     titleDiv.id = "unsel_title_" + index;
@@ -43,6 +49,7 @@ function appendSelectedTextCell(row_el, index) {
     // Make cell
     let textCell = document.createElement("td");
     textCell.classList.add("selected");
+    textCell.id = "sel_" + index;
     // Make button
     let deselectButton = document.createElement("input");
     deselectButton.type = "button";
@@ -80,9 +87,11 @@ function appendNavCell(row_el, id) {
         navCellSel.onchange = "setSelectedPage(this.value)";
     }
     // Connect components
-    selNavCell.appendChild(navCellText);
-    selNavCell.appendChild(navCellSel);
-    row_el.appendChild(selNavCell);
+    navCell.appendChild(navCellText);
+    navCell.appendChild(navCellSel);
+    row_el.appendChild(navCell);
 }
+
+const textRows = 5;
 
 postRequest([], "../../private/researcher/getAvailableTexts.php", setupTextTable, alert);

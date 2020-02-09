@@ -12,8 +12,9 @@
 
     function createReadingEntry($conn, $title, $version, $reader, $availWidth, $availHeight) {
 
-        $sql = $conn->prepare("INSERT INTO Readings (title, version, reader, availWidth, availHeight) VALUES (?, ?, ?, ?, ?)");
-        if (!$sql->bind_param("sisii", $title, $version, $reader, $availWidth, $availHeight)) respond(false, "Execution failed: " + $conn->error);
+        if (!$sql = $conn->prepare("INSERT INTO Readings (title, version, reader, availWidth, availHeight) VALUES (?, ?, ?, ?, ?)"))
+            respond(false, "Preparation failed: " + $conn->error);
+        if (!$sql->bind_param("sisii", $title, $version, $reader, $availWidth, $availHeight)) respond(false, "Binding failed: " + $conn->error);
 
         if (!$sql->execute()) respond(false, "Execution failed: " + $conn->error);
 
@@ -21,18 +22,18 @@
 
     function createLogEntry($conn, $title, $version, $reader, $log) {
 
-        $sql = $conn->prepare("
-            INSERT INTO Windows (title, version, reader, index, leftmostCharIndex, rightmostCharIndex, openOffset, closeOffset)
+        if (!$sql = $conn->prepare("
+            INSERT INTO Windows (title, version, reader, sequenceNumber, leftmostChar, rightmostChar, openOffset, closeOffset)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ");
-        if (!$sql->bind_param("sisiiidd", $title, $version, $reader, $readIndex, $windowStartIndex, $windowEndIndex, $openOffset, $closeOffset))
-            respond(false, "Execution failed: " + $conn->error);
+        ")) respond(false, "Preparation failed: " + $conn->error);
+        if (!$sql->bind_param("sisiiidd", $title, $version, $reader, $sequenceNumber, $leftmostChar, $rightmostChar, $openOffset, $closeOffset))
+            respond(false, "Binding failed: " + $conn->error);
 
         for ($i = 0; $i < count($log); $i++) {
-            $readIndex = $i;
-            $logEntry =$log[$i];
-            $windowStartIndex = $logEntry['leftmostCharIndex'];
-            $windowEndIndex = $logEntry['rightmostCharIndex'];
+            $sequenceNumber = $i;
+            $logEntry = $log[$i];
+            $leftmostChar = $logEntry['leftmostCharIndex'];
+            $leftmostChar = $logEntry['rightmostCharIndex'];
             $openOffset = $logEntry['openOffset'];
             $closeOffset = $logEntry['closeOffset'];
             if (!$sql->execute()) respond(false, "Execution failed: " + $conn->error);

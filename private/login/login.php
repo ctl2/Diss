@@ -6,29 +6,39 @@
     ini_set('display_errors', 1);
 
     include ("../lib/connectDB.php");
-    include ("../lib/accountExists.php");
+    include ("../lib/respond.php");
 
-    function login($username, $accountType) {
-        echo $accountType;
-        $_SESSION["username"] = $username;
+    function getAccountTypeResult($conn, $username, $password) {
+        $sql = "SELECT accountType FROM Accounts WHERE username='$username' AND password='$password'";
+        return mysqli_query($conn, $sql);
     }
 
-    if (!isset($_POST["username"])) {
-        echo 'No username sent to php script.';
-    } else {
+    function login($username, $accountType) {
+        $_SESSION["username"] = $username;
+        $_SESSION["accountType"] = $accountType;
+        respond(true, $accountType);
+    }
 
-        $conn = connectDB();
+    $conn = connectDB();
 
-        if (readerAccountExists($conn, $_POST["username"])) {
+    $username = getPostVar("username");
+    $password = getPostVar("password");
+
+    $accountTypeRes = getAccountTypeResult($conn, $username, $password);
+
+    if (mysqli_num_rows($accountTypeRes) === 0) respond(false, 'Username was not recognised.');
+
+    switch ($accountTypeRes->fetchAssoc['accountType']) {
+        case "reader":
             login($_POST["username"], "reader");
-        } else if (researcherAccountExists($conn, $_POST["username"])) {
+            break;
+        case "researcher":
             login($_POST["username"], "researcher");
-        } else if (reviewerAccountExists($conn, $_POST["username"])) {
+            break;
+        case "reviewer":
             login($_POST["username"], "reviewer");
-        } else {
-            echo "No account with username '" . $_POST["username"] . "'.";
-        }
-
+        default:
+            respond(false, "Account type was not recognised.")
     }
 
 ?>

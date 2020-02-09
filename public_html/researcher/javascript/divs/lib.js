@@ -1,6 +1,6 @@
 function hideDivs() {
     // Get an array of hidable div names
-    var divNames = array("fil", "up", "view", "an", "comp");
+    var divNames = ["fil", "up", "view", "an", "comp"];
     // Hide any unhidden divs
     for (let divName of divNames) {
         let div = document.getElementById(divName);

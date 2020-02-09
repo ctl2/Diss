@@ -6,62 +6,63 @@
     ini_set('display_errors', 1);
 
     include ("../lib/connectDB.php");
-    include ("../lib/accountExists.php");
+
+    function isTaken($conn, $username) {
+        if (!$sql = $conn->prepare("SELECT NULL FROM Accounts WHERE username=?")) respond(false, "Preparation failed: $conn->error");
+        if (!$sql->bind_param("s", $username)) respond(false, "Binding failed: $conn->error");
+
+        if (!$sql->execute()) respond(false, "Execution failed: $conn->error");
+
+        return $sql->num_rows > 0;
+    }
 
     function createReaderAccount($conn, $username, $password, $dob, $gender, $dis) {
 
-        $sql = $conn->prepare("INSERT INTO Reader (username, password, dob, gender, dis) VALUES (?, ?, ?, ?, ?)");
-        $sql->bind_param("ssssi", $username, $password, $dob, $gender, $dis);
+        if (!$sql = $conn->prepare("INSERT INTO Readers (username, password, dob, gender, dis) VALUES (?, ?, ?, ?, ?)")) respond(false, "Preparation failed: $conn->error");
+        if (!$sql->bind_param("ssssi", $username, $password, $dob, $gender, $dis)) respond(false, "Binding failed: $conn->error");
 
-        $sql->execute();
-
-    }
-
-    function createResearcherAccount($conn, $username, $password, $email, $name) {
-
-        $sql = $conn->prepare("INSERT INTO Researcher (username, password, email, name) VALUES (?, ?, ?, ?)");
-        $sql->bind_param("ssss", $username, $password, $email, $name);
-
-        $sql->execute();
+        if (!$sql->execute()) respond(false, "Execution failed: $conn->error");
 
     }
 
-    function respond($message) {
-        echo $message;
-    }
+    function createResearcherAccount($conn, $username, $password) {
 
-    if (isset($_POST["username"])) {
+        if (!$sql = $conn->prepare("INSERT INTO Researchers (username, password) VALUES (?, ?)")) respond(false, "Preparation failed: $conn->error");
+        if (!$sql->bind_param("ss", $username, $password)) respond(false, "Binding failed: $conn->error");
 
-        $conn = connectDB();
-        $username = $_POST["username"];
-        $password1 = $_POST["password1"];
-
-        if (accountExists($conn, $username)) {
-            respond("Username is taken.");
-        } else {
-
-            if ($_POST["acc_type"] == "reader") {
-
-                $dob = $_POST["dob"];
-                $gender = $_POST["gender"];
-                $dis = $_POST["dis"];
-
-                createReaderAccount($username, $password1, $dob, $gender, $dis);
-
-            } else {
-
-                $name = $_POST["name"];
-                $email = $_POST["email"];
-
-                createResearcherAccount($username, $password1, $name, $email);
-
-            }
-
-            $_SESSION["username"] = $username;
-            respond($_POST["acc_type"]);
-
-        }
+        if (!$sql->execute()) respond(false, "Execution failed: $conn->error");
 
     }
+
+    $conn = connectDB();
+
+    $username = getPostVar("username");
+    $password = getPostVar("password1");
+    $accType = getPostVar("acc_type");
+
+    if (isTaken($conn, $username)) respond(false, "Username is taken.");
+
+    if ($accType == "reader") {
+
+        $dob = getPostVar("dob");
+        $gender = getPostVar("gender");
+        $dis = getPostVar("dis");
+
+        createReaderAccount($username, $password, $dob, $gender, $dis);
+
+    } else {
+
+        $firstName = getPostVar("firstName");
+        $surname = getPostVar("surname");
+        $email = getPostVar("email");
+
+        createResearcherAccount($conn, $username, $password, $firstName, $surname, $email);
+
+    }
+
+    $_SESSION["username"] = $username;
+    $_SESSION["accType"] = $accType;
+
+    respond(true, $accType);
 
 ?>

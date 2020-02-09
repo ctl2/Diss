@@ -5,14 +5,14 @@
     include ("../lib/connectDB.php");
 
     function addToReviewer($conn, $username, $password, $email, $name) {
-        $sql = $conn->prepare("INSERT INTO Reviewer(username, password, email, name) VALUES (?, ?, ?, ?)");
+        $sql = $conn->prepare("INSERT INTO Reviewers(username, password, email, name) VALUES (?, ?, ?, ?)");
         $sql->bind_param("ssss", $username, $password, $email, $name);
-        add($conn, "Reviewer", $sql);
+        add($conn, "Reviewers", $sql);
     }
 
     function add($conn, $table, $sql) {
         if (!$sql->execute()) {
-            echo "Error for table $table: " . $conn->error . "<br><br>";
+            echo "Error for $table table: " . $conn->error . "<br><br>";
         }
     }
 

@@ -155,6 +155,7 @@ class FixationTimer {
     }
 
     uploadLog() {
+        window.performance.clearMarks("end");
         postRequest([
             "log=" + JSON.stringify(this.log),
             "availWidth=" + window.screen.availWidth,

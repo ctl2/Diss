@@ -29,6 +29,7 @@ function postRequest(data, url, success, failure) {
     };
 
     req.open('POST', url, true);
+    req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
     req.send(data.join('&'));
     return req;
 

@@ -12,9 +12,8 @@
         </style>
 
         <script type="text/javascript" src="../lib/ajax.js"></script>
-        <script type="text/javascript" src="javascript/setup.js" defer></script>
-        <script type="text/javascript" src="javascript/controlTexts.js" defer></script>
-        <script type="text/javascript" src="javascript/search.js" defer></script>
+        <script type="text/javascript" src="javascript/controlTextTable.js" defer></script>
+        <script type="text/javascript" src="javascript/setupTextTable.js" defer></script>
         <script type="text/javascript" src="javascript/divs/lib.js"></script>
         <script type="text/javascript" src="javascript/divs/upload.js"></script>
         <script type="text/javascript" src="javascript/divs/viewDetails.js"></script>
@@ -69,22 +68,28 @@
 
                 <div class="left">
                     Title <input id="up_title" type="text" /><br>
-                    Version <div id="up_ver"></div>
-                    File <input id="up_file" form="up_reset" type="file" />
+                    Version <span id="up_ver"></span><br>
+                    File <input id="up_file" form="up_reset" type="file" /><br>
+                    Make Text and Associated Reading Data Public
+                    <input id="up_is_public" form="up_reset" type="checkbox" /><br>
                 </div>
 
                 <div class="right">
 
-                    Minimum Target Age
+                    Minimum Reader Age
                     <input form="up_reset" type="checkbox" onchange="up_min_age.disabled = !up_min_age.disabled;" />
                     <input id="up_min_age" form="up_reset" type="number" disabled /><br>
 
-                    Maximum Target Age
+                    Maximum Reader Age
                     <input form="up_reset" type="checkbox" onchange="up_max_age.disabled = !up_max_age.disabled;" />
                     <input id="up_max_age" form="up_reset" type="number" disabled /><br>
 
-                    Make Text and Associated Reading Data Public
-                    <input id="up_isPublic" form="up_reset" type="checkbox" />
+                    Reader Gender
+                    <input form="up_reset" type="checkbox" onchange="up_gender.disabled = !up_gender.disabled;" />
+                    <select id="up_gender" form="up_reset" disabled>
+                        <option value="m">Male</option>
+                        <option value="f">Female</option>
+                    </select>
 
                 </div>
 
@@ -94,12 +99,12 @@
 
             <div id="view" hidden>
 
-                Title: <div id="view_title"></div><br>
-                Version: <div id="view_ver"></div><br>
+                Title: <span id="view_title"></span><br>
+                Version: <span id="view_ver"></span><br>
                 Uploader: <select id="view_uploader"></select><br>
-                Privacy Level: <div id="view_privacy"></div><br>
-                Target Age Range: <div id="view_age_range"></div><br>
-                Target Gender: <div id="view_gender"></div><br>
+                Privacy Level: <span id="view_privacy"></span><br>
+                Target Age Range: <span id="view_age_range"></span><br>
+                Target Gender: <span id="view_gender"></span><br>
                 Text: <br>
                 <div id="view_text"></div><br>
 

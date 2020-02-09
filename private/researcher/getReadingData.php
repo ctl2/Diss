@@ -8,10 +8,10 @@
     function getReadingData($conn, $reader, $title, $version) {
 
         $sql = "
-            SELECT windowStartIndex, windowEndIndex, duration
-            FROM WindowRead
+            SELECT leftmostChar, rightmostChar, openOffset, closeOffset
+            FROM Windows
             WHERE reader='$reader' AND title='$title' AND version=$version
-            ORDER BY index ASCENDING
+            ORDER BY sequenceNumber
         ";
 
         $dataRows = mysqli_query($conn, $sql);

@@ -9,7 +9,7 @@
 
         $sql = "
             SELECT DISTINCT reader
-            FROM WindowRead
+            FROM Windows
             WHERE title='$title' AND version=$version
         ";
 

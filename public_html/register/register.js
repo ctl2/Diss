@@ -1,10 +1,13 @@
 'use strict';
 
-function register(username_el, password1_el, password2_el, acc_type_el, info_els) {
+function register(username_el, password1_el, password2_el, acc_type_el, info_divs) {
 
-    var input_els = [acc_type_el, username_el, password1_el, password2_el].concat(info_els);
+    let input_els = [acc_type_el, username_el, password1_el, password2_el];
+    for (let info_div of info_divs.children) {
+        input_els.push(info_div.children[0]);
+    }
 
-    validator = new Validator(input_els);
+    let validator = new Validator(input_els);
     validator.validate();
     if (!validator.invalid) {
         postRequest(input_els.map(el => el.id + '=' + el.value), "../../private/register/register.php", login, alert);
@@ -85,8 +88,8 @@ class Validator {
         if (name.length < 3) {
             this.reject('Names must be more than 2 characters long.');
         } else if (name.length > 30) {
-            this.reject('Names must be 30 characters or less.')
-        } else if (!(/^[a-z|á|é|í|ó|ú|0-9|-|']+$/i.test(name))) {
+            this.reject('Names must be 20 characters or less.')
+        } else if (!(/^[a-z|á|é|í|ó|ú|-|']+$/i.test(name))) {
             this.reject('Names may only contain letters, hyphens and apostrophes.')
         }
 
@@ -97,7 +100,7 @@ class Validator {
         if (email.length < 3) {
             this.reject('Emails must be more than 2 characters long.');
         } else if (email.length > 30) {
-            this.reject('Names must be 30 characters or less.')
+            this.reject('Emails must be 30 characters or less.')
         } else if (!(/^\S+@\S+$/i.test(email))) {
             this.reject('Email addresses must be correctly formatted.')
         }

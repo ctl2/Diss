@@ -8,7 +8,8 @@ function updateUI(account_type) {
         div.appendChild(getNewGenderDiv());
         div.appendChild(getNewDisabilityDiv());
     } else {
-        div.appendChild(getNewNameDiv());
+        div.appendChild(getNewFirstNameDiv());
+        div.appendChild(getNewSurnameDiv());
         div.appendChild(getNewEmailDiv());
     }
 }
@@ -72,14 +73,30 @@ function getNewDisabilityDiv() {
     return disDiv;
 }
 
-function getNewNameDiv() {
+function getNewFirstNameDiv() {
     // Create name elements
     let nameDiv = document.createElement('div');
-    let nameText = document.createTextNode('Full name ');
+    let nameText = document.createTextNode('First name ');
     let nameInput = document.createElement('input');
     // Set element properties
     nameDiv.classList.add("inputField");
-    nameInput.id = "name";
+    nameInput.id = "firstName";
+    nameInput.type = "text";
+    // Connect elements
+    nameDiv.appendChild(nameText);
+    nameDiv.appendChild(nameInput);
+    // Return div
+    return nameDiv;
+}
+
+function getNewSurnameDiv() {
+    // Create name elements
+    let nameDiv = document.createElement('div');
+    let nameText = document.createTextNode('Surname ');
+    let nameInput = document.createElement('input');
+    // Set element properties
+    nameDiv.classList.add("inputField");
+    nameInput.id = "surname";
     nameInput.type = "text";
     // Connect elements
     nameDiv.appendChild(nameText);

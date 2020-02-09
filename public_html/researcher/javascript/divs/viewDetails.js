@@ -19,7 +19,7 @@ function showViewDetailsDiv() {
     postRequest(["title=" + title, "version=" + version], "../../private/researcher/getTextString.php", showText, alert);
     // Show only the view div
     hideDivs();
-    document.getElementByID("view").removeAttribute('hidden');
+    document.getElementById("view").removeAttribute('hidden');
 }
 
 function showText(textString) {

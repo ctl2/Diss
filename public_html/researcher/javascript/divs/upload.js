@@ -2,8 +2,8 @@
 
 function showUploadDiv(isNewText) {
     // Prepare the title and version input elements
-    let title_el = document.getElementByID("up_title");
-    let ver_el = document.getElementByID("up_ver");
+    let title_el = document.getElementById("up_title");
+    let ver_el = document.getElementById("up_ver");
     if (isNewText) {
         // Title is blank and enabled
         title_el.value = "";
@@ -25,124 +25,166 @@ function showUploadDiv(isNewText) {
     }
     // Show only the upload div
     hideDivs();
-    document.getElementByID("upload").removeAttribute('hidden');
+    document.getElementById("up").removeAttribute('hidden');
 }
 
 function upload() {
-    // Get references to user input elements
-    let title_el = document.getElementByID("up_title");
-    let file_el = document.getElementByID("up_file");
-    let minAge_el = document.getElementByID("up_min_age");
-    let maxAge_el = document.getElementByID("up_max_age");
-    let isPublic_el = document.getElementByID("up_is_public");
-    // Validate user inputs
-    let validator = new Validator(title_el, file_el, minAge_el, maxAge_el, isPublic_el);
-    validator.validate();
-    if (validator.hasOwnProperty("invalid")) {
-        // Tell the user how to correct their inputs
-        alert(validator.invalid.message);
-    } else {
-        let data = array(
-            "title=" + title_el.value,
-            "title=" + title_el.value,
-        );
-        postRequest(data, "../../private/researcher/uploadText.php", uploadSuccess, alert);
-    }
-
+    // Process user inputs
+    let processor = new InputProcessor();
+    processor.process().then(() => {
+        let data = [];
+        for (let datumName in processor.data) {
+            let datum = processor.data[datumName];
+            if (datum.isValid === false) {
+                alert(datum.value);
+                data = undefined;
+                break;
+            }
+            if (datum.value !== null) data.push(datumName + "=" + datum.value);
+        }
+        if (data) {
+            let versionEl = document.getElementById("up_ver");
+            data.push("version=" + versionEl.innerText);
+            postRequest(data, "../../private/researcher/uploadText.php", uploadSuccess, alert);
+        }
+    });
 }
 
-function uploadSuccess(responseText) {
-    if (responseText == "") {
-        document.getElementByID("up_reset").reset();
-        document.getElementByID("up_ver").innerText = "";
+function uploadSuccess(responseJSON) {
+    let response = JSON.parse(responseJSON);
+    if (response.success) {
+        document.getElementById("up_reset").reset();
+        document.getElementById("up_ver").innerText = "";
         hideDivs();
         alert("New text successfully uploaded!");
     } else {
-        alert(responseText);
+        alert(response.message);
     }
 }
 
-class Validator {
+class InputProcessor {
 
-    constructor(title_el, file_el, minAge_el, maxAge_el, isPublic_el) {
-        this.title_el = title_el;
-        this.file_el = file_el;
-        this.min_age_el = min_age_el;
-        this.max_age_el = max_age_el;
-        this.is_public_el = is_public_el;
+    data = [];
+
+    constructor() {
+        this.data["title"] = {el: document.getElementById("up_title")};
+        this.data["text"] = {el: document.getElementById("up_file")};
+        this.data["isPublic"] = {el: document.getElementById("up_is_public")};
+        this.data["minAge"] = {el: document.getElementById("up_min_age")};
+        this.data["maxAge"] = {el: document.getElementById("up_max_age")};
+        this.data["gender"] = {el: document.getElementById("up_gender")};
     }
 
-    validate() {
-        // Perform validation tests in ascending order of importance to overwrite less important messages
-        this.validateIsPublic();
-        this.validateMaxAge();
-        this.validateMinAge();
-        let fileReader = new FileReader();
-        this.validateFile(fileReader);
-        this.validateTitle();
-        // Abort the file read operation if it has taken too long
-        if (fileReader.readyState !== 2) {
-            this.flagInvalid(file_el, "File took too long to load.");
-            fileReader.abort();
-        }
+    async process() {
+        this.processTitle();
+        await this.processFile();
+        this.processIsPublic();
+        this.processMinAge();
+        this.processMaxAge();
+        this.processGender();
     }
 
-    validateTitle() {
+    processTitle() {
+        let title = this.data["title"].el.value;
         if (title == "") {
-            this.flagInvalid(title_el, "Please provide a title.");
-        } else if (title_el.value.length > 30) {
-            this.flagInvalid(title_el, "Titles must be 30 characters or less.");
-        }
-    }
-
-    validateFile(fileReader) {
-        if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
-            this.flagInvalid(file_el, "Your browser doesn't support the API's necessary to read files. Please switch to a more modern browser.");
-        } else if (file_el.files.length == 0) {
-            this.flagInvalid(file_el, "Please provide a text file.")
+            this.flag("title", false, "Please provide a title.");
+        } else if (title.length > 30) {
+            this.flag("title", false, "Titles must be 30 characters or less.");
         } else {
-            fileReader.onload = function() {
-                if (fileReader.result == "") {
-                    this.flagInvalid(file_el, "Please provide a non-empty text file.");
-                } else if (fileReader.result.length > 30000) {
-                    this.flagInvalid(file_el, "Text files must not contain more than 30,000 characters.");
+            this.flag("title", true, title);
+        }
+    }
+
+    async processFile() {
+        if (!window.File || !window.FileReader || !window.FileList || !window.Blob) {
+            this.flag("text", false, "Your browser doesn't support the API's necessary to read files. Please switch to a more modern browser.");
+        } else if (this.data["text"].el.files.length == 0) {
+            this.flag("text", false, "Please provide a text file.")
+        } else {
+            try {
+                let fileContents = await this.getFileContents(this.data["text"].el.files[0]);
+                if (fileContents == "") {
+                    this.flag("text", false, "Please provide a non-empty text file.");
+                } else if (fileContents.length > 30000) {
+                    this.flag("text", false, "Text files must not contain more than 30,000 characters.");
+                } else {
+                    this.flag("text", true, fileContents);
                 }
-            };
-            fileReader.readAsText(file_el.files[0]);
-        }
-    }
-
-    validateMinAge() {
-        if (isRelevant(min_age_el)) {
-            if (isNaN(min_age_el.value)) {
-                this.flagInvalid(min_age_el, 'Minimum age must be a number.');
-            } else if (min_age_el.value < 0 || min_age_el.value > 255) {
-                this.flagInvalid(min_age_el, 'Minimum age must be between 0 and 255.');
+            } catch(e) {
+                this.flag("text", false, "File took too long to load.");
             }
         }
     }
 
-    validateMaxAge() {
-        if (isRelevant(max_age_el)) {
-            if (isNaN(max_age_el.value)) {
-                this.flagInvalid(max_age_el, 'Maximum age must be a number.');
-            } else if (max_age_el.value < 0 || max_age_el.value > 255) {
-                this.flagInvalid(max_age_el, 'Maximum age must be between 0 and 255.');
+    getFileContents(file) {
+        let fileReader = new FileReader();
+        fileReader.readAsText(file);
+        // Wait a while for the file to load.
+        return new Promise((resolve, reject) => {
+            let patience = 10;
+            let checkFile = setInterval(() => {
+                if (fileReader.readyState === 2) {
+                    clearInterval(checkFile);
+                    resolve(fileReader.result);
+                } else {
+                    // Abort the file read operation if it has taken too long
+                    if (patience-- === 0) {
+                        clearInterval(checkFile);
+                        fileReader.abort();
+                        reject();
+                    }
+                }
+            }, 100);
+        });
+    }
+
+    processIsPublic() {
+        this.flag("isPublic", true, this.data["isPublic"].el.checked);
+    }
+
+    processMinAge() {
+        if (this.isRelevant(this.data["minAge"].el)) {
+            let minAge = this.data["minAge"].el.value;
+            if (isNaN(minAge)) {
+                this.flag("minAge", false, 'Minimum age must be a number.');
+            } else if (minAge < 0 || minAge > 255) {
+                this.flag("minAge", false, 'Minimum age must be between 0 and 255.');
+            } else {
+                this.flag("minAge", true, minAge);
             }
+        } else {
+            this.flag("minAge", true, null);
         }
     }
 
-    validateIsPublic() {}
+    processMaxAge() {
+        if (this.isRelevant(this.data["maxAge"].el)) {
+            let maxAge = this.data["maxAge"].el.value;
+            if (isNaN(maxAge)) {
+                this.flag("maxAge", false, 'Maximum age must be a number.');
+            } else if (maxAge < 0 || maxAge > 255) {
+                this.flag("maxAge", false, 'Maximum age must be between 0 and 255.');
+            }
+        } else {
+            this.flag("maxAge", true, null);
+        }
+    }
 
-    flagInvalid(element, message) {
-        this.invalid = {
-            element: element,
-            message: message
-        };
+    processGender() {
+        if (this.isRelevant(this.data["gender"].el)) {
+            this.flag("maxAge", true, this.data["gender"].el.value);
+        } else {
+            this.flag("gender", true, null);
+        }
+    }
+
+    flag(key, isValid, message) {
+        this.data[key].isValid = isValid;
+        this.data[key].value = message;
     }
 
     isRelevant(input_el) {
-        return !input_el.disabled = "disabled" && input_el.value != '';
+        return !input_el.hasAttribute("disabled") && input_el.value != '';
     }
 
 }

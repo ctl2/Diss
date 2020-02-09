@@ -4,9 +4,9 @@
 
         $sql = "
             SELECT chara
-            FROM VersionCharacter
+            FROM Characters
             WHERE title='$title' AND version=$version
-            ORDER BY index
+            ORDER BY sequenceNumber
         ";
 
         $charRows = mysqli_query($conn, $sql);
