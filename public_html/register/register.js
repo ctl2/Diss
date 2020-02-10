@@ -10,7 +10,7 @@ function register(username_el, password1_el, password2_el, acc_type_el, info_div
     let validator = new Validator(input_els);
     validator.validate();
     if (!validator.invalid) {
-        postRequest(input_els.map(el => el.id + '=' + el.value), "../../private/register/register.php", login, alert);
+        postRequest(input_els.map(el => el.id + '=' + el.value), "../../private/register/register.php", login, alert, true);
     }
 
 }
@@ -109,7 +109,7 @@ class Validator {
 
     validateDate(date) {
 
-        date_parts = date.split("-");
+        let date_parts = date.split("-");
         if (date_parts.length != 3) {
             this.reject("Dates must be filled out fully.");
         } else if (Number(date_parts[0]) === NaN || Number(date_parts[1]) === NaN || Number(date_parts[2]) === NaN) {

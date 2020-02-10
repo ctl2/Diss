@@ -5,57 +5,54 @@
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
 
-    include ("../lib/connectDB.php");
-    include ("../lib/respond.php");
-
-
+    require_once("../lib/connectDB.php");
+    require_once("../lib/getPostVar.php");
+    require_once("../lib/boundQuery.php");
+    require_once("../lib/respond.php");
 
     function createReadingEntry($conn, $title, $version, $reader, $availWidth, $availHeight) {
-
-        if (!$sql = $conn->prepare("INSERT INTO Readings (title, version, reader, availWidth, availHeight) VALUES (?, ?, ?, ?, ?)"))
-            respond(false, "Preparation failed: " + $conn->error);
-        if (!$sql->bind_param("sisii", $title, $version, $reader, $availWidth, $availHeight)) respond(false, "Binding failed: " + $conn->error);
-
-        if (!$sql->execute()) respond(false, "Execution failed: " + $conn->error);
-
+        // Make a bound query for a single insert into the Readings table
+        $sql = "INSERT INTO Readings (title, version, reader, availWidth, availHeight) VALUES (?, ?, ?, ?, ?)";
+        $typeString = "sisii";
+        $valueArray = array(&$title, &$version, &$reader, &$availWidth, &$availHeight);
+        makeBoundQuery($conn, $sql, $typeString, $valueArray);
     }
 
     function createLogEntry($conn, $title, $version, $reader, $log) {
-
-        if (!$sql = $conn->prepare("
+        // Get a bound query for a single insert into the Windows table
+        $sql = "
             INSERT INTO Windows (title, version, reader, sequenceNumber, leftmostChar, rightmostChar, openOffset, closeOffset)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ")) respond(false, "Preparation failed: " + $conn->error);
-        if (!$sql->bind_param("sisiiidd", $title, $version, $reader, $sequenceNumber, $leftmostChar, $rightmostChar, $openOffset, $closeOffset))
-            respond(false, "Binding failed: " + $conn->error);
-
-        for ($i = 0; $i < count($log); $i++) {
-            $sequenceNumber = $i;
-            $logEntry = $log[$i];
+        ";
+        $typeString = "sisiiidd";
+        $valueArray = array(&$title, &$version, &$reader, &$sequenceNumber, &$leftmostChar, &$rightmostChar, &$openOffset, &$closeOffset);
+        $binding = getBoundQuery($conn, $sql, $typeString, $valueArray);
+        // Execute the bound query once for each set of values in the $log array
+        for ($sequenceNumber = 0; $sequenceNumber < count($log); $sequenceNumber++) {
+            $logEntry = $log[$sequenceNumber];
             $leftmostChar = $logEntry['leftmostCharIndex'];
-            $leftmostChar = $logEntry['rightmostCharIndex'];
+            $rightmostChar = $logEntry['rightmostCharIndex'];
             $openOffset = $logEntry['openOffset'];
             $closeOffset = $logEntry['closeOffset'];
-            if (!$sql->execute()) respond(false, "Execution failed: " + $conn->error);
+            executeBoundQuery($conn, $binding);
         }
-
     }
 
     $conn = connectDB();
 
-    $title = getPostVar("title");
-    $version = getPostVar("version");
+    if (!$title = $_SESSION["title"]) respond(false, "No 'title' session variable.");
+    if (!$version = $_SESSION["version"]) respond(false, "No 'version' session variable.");
     $reader = $_SESSION['username'];
     $availWidth = getPostVar("availWidth");
     $availHeight = getPostVar("availHeight");
     $log = json_decode(getPostVar("log"), true);
-
-    $conn->autocommit(FALSE);
+    // Group all queries into a single transaction
+    if (!$conn->autocommit(false)) respond(false, "Failed to start transaction: $conn->error");
 
     createReadingEntry($conn, $title, $version, $reader, $availWidth, $availHeight);
     createLogEntry($conn, $title, $version, $reader, $log);
 
-    if (!$mysqli->commit()) respond(false, "Commit failed: " + $conn->error);
+    if (!$conn->commit()) respond(false, "Commit failed: $conn->error");
 
     respond(true, "");
 

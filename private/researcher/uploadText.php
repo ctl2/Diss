@@ -2,92 +2,77 @@
 
     session_start();
 
-    include ("../lib/connectDB.php");
+    require_once("../lib/connectDB.php");
+    require_once("../lib/getPostVar.php");
+    require_once("../lib/boundQuery.php");
+    require_once("../lib/respond.php");
 
     function createTextEntry($conn, $title, $uploader) {
-
-        if (!$sql = $conn->prepare("INSERT INTO Texts (title, uploader) VALUES (?, ?)")) respond(false, "Preparation failed: $conn->error");
-        if (!$sql->bind_param("ss", $title, $uploader)) respond(false, "Binding failed: $conn->error");
-
-        if (!$sql->execute()) respond(false, "Execution failed: $conn->error");
-
+        $sql = "INSERT INTO Texts (title, uploader) VALUES (?, ?)";
+        $typeString = "ss";
+        $valueArray = array(&$title, &$uploader);
+        makeBoundQuery($conn, $sql, $typeString, $valueArray);
     }
 
     function createVersionEntry($conn, $title, $version, $isPublic, $targetAgeMin, $targetAgeMax, $targetGender) {
-
-        $colArray = array(
-            "version",
-            "isPublic"
+        // Get an array of all possible query parameters and associated data
+        $params = array(
+            "title" => array("s", &$title),
+            "version" => array("i", &$version),
+            "isPublic" => array("i", &$isPublic),
+            "targetAgeMin" => array("i", &$targetAgeMin),
+            "targetAgeMax" => array("i", &$targetAgeMax),
+            "targetGender" => array("s", &$targetGender)
         );
-        $valArray = array(
-            "$version",
-            "$isPublic"
-        );
-        if (isset($targetAgeMin)) {
-            array_push($colArray, "targetAgeMin");
-            array_push($valArray, "$targetAgeMin");
+        // Remove parameters that hold NULL values
+        foreach($params as $paramName => $paramVals) {
+            if (!isset($paramVals[1])) unset($params[$paramName]);
         }
-        if (isset($targetAgeMin)) {
-            array_push($colArray, "targetAgeMax");
-            array_push($valArray, "$targetAgeMax");
-        }
-        if (isset($targetAgeMin)) {
-            array_push($colArray, "targetGender");
-            array_push($valArray, "'$targetGender'");
-        }
-
-        if (!$sql = $conn->prepare("
-            INSERT INTO Versions (" . array_reduce($colArray, "separateWithCommas", "title") . ")
-            VALUES (" . array_reduce($valArray, "separateWithCommas", "?") . ")
-        ")) respond(false, "Preparation failed: $conn->error");
-        if (!$sql->bind_param("s", $title)) respond(false, "Binding failed: $conn->error");
-
-        if (!$sql->execute()) respond(false, "Execution failed: $conn->error");
-
-    }
-
-    function separateWithCommas($v1, $v2) {
-        return $v1 . ", " . $v2;
+        // Dynamically build the insert statement
+        $sql = "
+            INSERT INTO Versions (" . implode(", ", array_keys($params)) . ")
+            VALUES (" . substr(str_repeat("?, ", count($params)), 0, -2) . ")
+        ";
+        // Access neccessary values from the parameters array
+        $typeString = implode("", array_column(array_values($params), 0));
+        $valueArray = array_column(array_values($params), 1);
+        // Make the query
+        makeBoundQuery($conn, $sql, $typeString, $valueArray);
     }
 
     function createCharactersEntry($conn, $title, $version, $text) {
-
-        if (!$sql = $conn->prepare("INSERT INTO Characters (title, version, sequenceNumber, chara) VALUES (?, ?, ?, ?)"))
-            respond(false, "Preparation failed: $conn->error");
-        if (!$sql->bind_param("siis", $title, $version, $sequenceNumber, $chara)) respond(false, "Binding failed: $conn->error");
-
-        for ($i = 0; $i < strlen($text); $i++) {
-            $sequenceNumber = $i;
-            $chara = substr($text, $i, 1);
-            if (!$sql->execute()) respond(false, "Execution failed: $conn->error");
+        // Make a bound query for a single insert into the Characters table
+        $sql = "INSERT INTO Characters (title, version, sequenceNumber, chara) VALUES (?, ?, ?, ?)";
+        $typeString = "siis";
+        $valueArray = array(&$title, &$version, &$sequenceNumber, &$chara);
+        $binding = getBoundQuery($conn, $sql, $typeString, $valueArray);
+        // Execute the bound query once for each character in the $text string
+        for ($sequenceNumber = 0; $sequenceNumber < strlen($text); $sequenceNumber++) {
+            $chara = substr($text, $sequenceNumber, 1);
+            executeBoundQuery($conn, $binding);
         }
-
     }
 
+    // Connect to the database
     $conn = connectDB();
-
+    // Retrieve mandatory arguments
+    $text = getPostVar('text');
     $title = getPostVar('title');
     $version = getPostVar('version');
     $isPublic = getPostVar('isPublic');
-    if (isset($_POST['targetAgeMin'])) {
-        $targetAgeMin = $_POST['targetAgeMin'];
-    }
-    if (isset($_POST['targetAgeMax'])) {
-        $targetAgeMax = $_POST['targetAgeMax'];
-    }
-    if (isset($_POST['targetGender'])) {
-        $targetGender = $_POST['targetGender'];
-    }
-    $text = getPostVar('text');
-
-    $conn->autocommit(FALSE);
-
+    // Retrieve optional arguments
+    if (isset($_POST['targetAgeMin'])) $targetAgeMin = $_POST['targetAgeMin'];
+    if (isset($_POST['targetAgeMax'])) $targetAgeMax = $_POST['targetAgeMax'];
+    if (isset($_POST['targetGender'])) $targetGender = $_POST['targetGender'];
+    // Group all queries into a single transaction
+    if (!$conn->autocommit(false)) respond(false, "Failed to start transaction: $conn->error");
+    // Make queries
     if ($version == "1") createTextEntry($conn, $title, $_SESSION['username']);
     createVersionEntry($conn, $title, $version, $isPublic, $targetAgeMin, $targetAgeMax, $targetGender);
     createCharactersEntry($conn, $title, $version, $text);
-
+    // Commit queries
     if (!$conn->commit()) respond(false, "Commit failed: $conn->error");
-
+    // Report success
     respond(true, "");
 
 ?>

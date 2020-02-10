@@ -1,5 +1,5 @@
-function hideDivs() {
-    // Get an array of hidable div names
+function hideDivs(exception) {
+    // Define a collection of div IDs to hide
     var divNames = ["fil", "up", "view", "an", "comp"];
     // Hide any unhidden divs
     for (let divName of divNames) {
@@ -10,14 +10,21 @@ function hideDivs() {
             if (resetForm !== null) resetForm.reset();
         }
     }
+    if (exception) {
+        exceptDiv = document.getElementById(exception);
+        exceptDiv.removeAttribute("hidden");
+        document.getElementById("but_hide").removeAttribute("disabled");
+    } else {
+        document.getElementById("but_hide").disabled = "disabled";
+    }
 }
 
 function updateDivButtons() {
     // Get references to the buttons
     let verButton = document.getElementById("but_ver");
     let viewButton = document.getElementById("but_view");
-    let anButton = document.getElementById("but_view");
-    let compButton = document.getElementById("but_view");
+    let anButton = document.getElementById("but_ana");
+    let compButton = document.getElementById("but_comp");
     // Set disabled properties
     switch (selTexts.length) {
         case 0:

@@ -3,7 +3,7 @@
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
 
-    include ("../lib/connectDB.php");
+    require ("../lib/connectDB.php");
 
     function makeQuery($conn, $sql, $name, $operation) {
 
@@ -148,7 +148,7 @@
                 isPublic BINARY NOT NULL,
                 targetAgeMin TINYINT UNSIGNED,
                 targetAgeMax TINYINT UNSIGNED,
-                targetGender CHAR,
+                targetGender VARCHAR(1),
                 PRIMARY KEY (title, version),
                 FOREIGN KEY (title) references Texts (title) ON UPDATE cascade ON DELETE cascade
             ) ENGINE=InnoDB
@@ -166,7 +166,7 @@
                 title VARCHAR(30) NOT NULL,
                 version TINYINT UNSIGNED NOT NULL,
                 sequenceNumber SMALLINT UNSIGNED NOT NULL,
-                chara CHAR,
+                chara VARCHAR(1) NOT NULL,
                 PRIMARY KEY (title, version, sequenceNumber),
                 FOREIGN KEY (title, version) references Versions (title, version) ON UPDATE cascade ON DELETE cascade
             ) ENGINE=InnoDB
@@ -230,13 +230,13 @@
         $sql = "
             CREATE OR REPLACE VIEW $viewName
             AS
-                SELECT username, password, 'reader' as AccountType
+                SELECT username, password, 'reader' as accountType
                 FROM Readers
                 UNION ALL
-                SELECT username, password, 'researcher' as AccountType
+                SELECT username, password, 'researcher' as accountType
                 FROM Researchers
                 UNION ALL
-                SELECT username, password, 'reviewer' as AccountType
+                SELECT username, password, 'reviewer' as accountType
                 FROM Reviewers
         ";
 

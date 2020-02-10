@@ -12,20 +12,20 @@ function showUploadDiv(isNewText) {
         ver_el.innerText = "1";
     } else {
         // Title is set and disabled
-        let title = Object.keys(selTexts)[0];
+        let title = selTexts[0].title;
         title_el.value = title;
         title_el.disabled = "disabled";
         // Find the highest current version
         let highestVersion = 0;
-        for (let version in selTexts[title]) {
-            if (version > highestVersion) highestVersion = version;
+        for (let version in allTexts[title].versions) {
+            let versionNum = Number(version);
+            if (versionNum > highestVersion) highestVersion = versionNum;
         }
         // Version = highest + 1
         ver_el.innerText = highestVersion + 1;
     }
     // Show only the upload div
-    hideDivs();
-    document.getElementById("up").removeAttribute('hidden');
+    hideDivs("up");
 }
 
 function upload() {
@@ -45,7 +45,7 @@ function upload() {
         if (data) {
             let versionEl = document.getElementById("up_ver");
             data.push("version=" + versionEl.innerText);
-            postRequest(data, "../../private/researcher/uploadText.php", uploadSuccess, alert);
+            postRequest(data, "../../private/researcher/uploadText.php", uploadSuccess, alert, true);
         }
     });
 }

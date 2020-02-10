@@ -3,14 +3,18 @@
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
 
-    include ("../lib/connectDB.php");
-    include ("../lib/echoTextString.php");
+    require_once("../lib/connectDB.php");
+    require_once("../lib/getPostVar.php");
+    require_once("../lib/getTextString.php");
+    require_once("../lib/respond.php");
 
     $conn = connectDB();
 
-    $title = $_POST["title"];
-    $version = $_POST["version"];
+    $title = getPostVar("title");
+    $version = getPostVar("version");
 
-    echoTextString($conn, $title, $version);
+    $textString = getTextString($conn, $title, $version);
+
+    respond(true, $textString);
 
 ?>

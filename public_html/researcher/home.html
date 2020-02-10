@@ -3,22 +3,30 @@
 
     <head>
 
-        <title>Reading Session</title>
+        <title>Researcher Home</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
         <style>
-
+            #top {
+                padding-bottom: 20px;
+            }
         </style>
 
         <script type="text/javascript" src="../lib/ajax.js"></script>
-        <script type="text/javascript" src="javascript/controlTextTable.js" defer></script>
-        <script type="text/javascript" src="javascript/setupTextTable.js" defer></script>
+        <script type="text/javascript" src="../lib/redirect.js"></script>
+        <script type="text/javascript" src="../lib/checkPrivileges.js"></script>
+        <script type="text/javascript">
+            checkPrivileges("researcher");
+        </script>
         <script type="text/javascript" src="javascript/divs/lib.js"></script>
+        <script type="text/javascript" src="javascript/divs/filter.js"></script>
         <script type="text/javascript" src="javascript/divs/upload.js"></script>
         <script type="text/javascript" src="javascript/divs/viewDetails.js"></script>
         <script type="text/javascript" src="javascript/divs/analyse.js"></script>
         <script type="text/javascript" src="javascript/divs/compare.js"></script>
+        <script type="text/javascript" src="javascript/controlTextTable.js" defer></script>
+        <script type="text/javascript" src="javascript/setupTextTable.js" defer></script>
 
     </head>
 
@@ -31,7 +39,7 @@
             <input id="but_view" type="button" onclick="showViewDetailsDiv()" value="View Details" disabled />
             <input id="but_ana" type="button" onclick="showAnalyseDiv()" value="Analyse" disabled />
             <input id="but_comp" type="button" onclick="showCompareDiv()" value="Compare" disabled />
-            <input id="but_hide" type="button" onclick="hideDivs()" value="Hide" />
+            <input id="but_hide" type="button" onclick="hideDivs()" value="Hide" disabled />
         </div>
 
         <div id="middle"></div>
@@ -45,16 +53,16 @@
 
                 Ownership
                 <select id="fil_type" form="fil_reset">
-                    <option value="owned">Me</option>
-                    <option value="unowned">Not Me</option>
                     <option value="all">All</option>
+                    <option value="owned">Owned</option>
+                    <option value="unowned">Unowned</option>
                 </select><br>
 
                 Minimum target age
-                <input id="fil_min_age" form="fil_reset" type="number" value="0" />
+                <input id="fil_min_age" form="fil_reset" type="number" value="0" /><br>
 
                 Maximum target age
-                <input id="fil_max_age" form="fil_reset" type="number" value="255" />
+                <input id="fil_max_age" form="fil_reset" type="number" value="255" /><br>
 
                 <input id="filter_button" type="button"
                 onclick="filterTexts(fil_search.value, fil_type.value, fil_min_age.value, fil_max_age.value)"
@@ -99,14 +107,31 @@
 
             <div id="view" hidden>
 
-                Title: <span id="view_title"></span><br>
-                Version: <span id="view_ver"></span><br>
-                Uploader: <select id="view_uploader"></select><br>
-                Privacy Level: <span id="view_privacy"></span><br>
-                Target Age Range: <span id="view_age_range"></span><br>
-                Target Gender: <span id="view_gender"></span><br>
-                Text: <br>
-                <div id="view_text"></div><br>
+                <div id="view_title_line">
+                    Title: <span id="view_title"></span>
+                </div>
+                <div id="view_ver_line">
+                    Version: <span id="view_ver"></span>
+                </div>
+                <div id="view_owner_line">
+                    Uploader: <span id="view_uploader"></span>
+                </div>
+                <div id="view_priv_line">
+                    Privacy Level: <span id="view_privacy"></span>
+                </div>
+                <div id="view_min_age_line">
+                    Target Age Minimum: <span id="view_min_age"></span>
+                </div>
+                <div id="view_max_age_line">
+                    Target Age Maximum: <span id="view_max_age"></span>
+                </div>
+                <div id="view_gen_line">
+                    Target Gender: <span id="view_gender"></span>
+                </div>
+                <div id="view_text_line">
+                    Text:
+                </div>
+                <div id="view_text"></div>
 
             </div>
 
@@ -190,11 +215,12 @@
 
             <br><br>
 
-            <table id="texts">
-                <tr>
+            <table>
+                <thead>
                     <th>Unselected</th>
                     <th>Selected</th>
-                </tr>
+                </thead>
+                <tbody id="texts"></tbody>
             </table>
 
         </div>

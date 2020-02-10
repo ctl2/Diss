@@ -3,6 +3,10 @@ function showAnalyseDiv() {
     let selText = selTexts[0];
     let title = selText.title;
     let version = selText.version;
+
+
+    // Show only the analysis div
+    hideDivs("an");
 }
 
 // Start by retrieving a list of usernames who have read the text.

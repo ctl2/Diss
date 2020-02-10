@@ -65,7 +65,7 @@ function getNewDisabilityDiv() {
     // Set element properties
     disDiv.classList.add("inputField");
     disInput.id = "dis";
-    disInput.type = "text";
+    disInput.type = "checkbox";
     // Connect elements
     disDiv.appendChild(disText);
     disDiv.appendChild(disInput);

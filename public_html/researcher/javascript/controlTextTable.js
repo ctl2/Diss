@@ -40,39 +40,40 @@ function displayUnselectedTexts(pageNumber) {
         let textIndex = ((pageNumber-1) * textRows) + i;
         if (textIndex >= titles.length) {
             // Hide empty cell
-            cell.hidden = "hidden";
+            cell.style.visibility = "hidden";
         } else {
             // Unhide non-empty cell
-            cell.removeAttribute("hidden");
+            cell.style.visibility = "visible";
             // Display title
-            let titleDiv = document.getElementById("unsel_title_" + i);
+            let titleSpan = document.getElementById("unsel_title_" + i);
             let title = titles[textIndex];
-            titleDiv.innerText = title;
+            titleSpan.innerText = title;
             // Display version options
             let verSel = document.getElementById("unsel_ver_" + i);
-            for (let version in unselTexts[title].versions) {
+            verSel.innerHTML = "";
+            for (let version of unselTexts[title]) {
                 let verOpt = document.createElement("option");
                 verOpt.value = version;
-                verOpt.innerText = version;
+                verOpt.innerText = "v" + version;
                 verSel.appendChild(verOpt);
             }
         }
     }
     // Update the navigator
-    updateNavSel(document.getElementById("unsel_nav"), unselTexts.length, pageNumber);
+    updateNavSel(document.getElementById("unsel_nav"), titles.length, pageNumber);
 }
 
 function displaySelectedTexts(pageNumber) {
     // Use the selected texts list to display texts
     for (let i = 0; i < textRows; i++) {
         let cell = document.getElementById("sel_" + i);
-        let textIndex = (pageNumber*textRows) + i;
+        let textIndex = ((pageNumber-1)*textRows) + i;
         if (textIndex >= selTexts.length) {
             // Hide empty cell
-            cell.hidden = "hidden";
+            cell.style.visibility = "hidden";
         } else {
             // Unhide non-empty cell
-            cell.removeAttribute("hidden");
+            cell.style.visibility = "visible";
             // Display info
             let text = selTexts[textIndex];
             document.getElementById("sel_title_" + i).innerText = text.title;
@@ -86,6 +87,7 @@ function displaySelectedTexts(pageNumber) {
 function updateNavSel(sel, textQuant, pageNumber) {
     // Calculate the required number of pages
     let pageQuant = Math.ceil(textQuant / textRows);
+    if (pageQuant === 0) pageQuant = 1;
     // Make one selector option for each page
     sel.innerHTML = "";
     for (let i = 1; i <= pageQuant; i++) {
@@ -94,7 +96,7 @@ function updateNavSel(sel, textQuant, pageNumber) {
         navOpt.innerText = i;
         // Maintain user page selection
         if (i === pageNumber) navOpt.selected = "selected";
-        navSel.appendChild(navOpt);
+        sel.appendChild(navOpt);
     }
 }
 
@@ -130,7 +132,7 @@ class Filter {
                 acceptedVersions.push(version);
             }
             // Push the text and its accepted versions to the accepted texts collection.
-            if (acceptedVersions.length > 0) this.filterTexts[title] = acceptedVersions;
+            if (acceptedVersions.length > 0) this.filteredTexts[title] = acceptedVersions;
         }
     }
 
@@ -172,12 +174,29 @@ function select(title, version) {
         version: version
     });
     // Update display
-    displayUnselectedTexts();
-    displaySelectedTexts();
+    document.getElementById("unsel_nav").onchange();
+    document.getElementById("sel_nav").onchange();
     // Update buttons
     updateDivButtons();
 }
 
 function unselect(title, version) {
-
+    // Remove the version from the selected texts list
+    for (let textIndex in selTexts) {
+        if (selTexts[textIndex].title == title && selTexts[textIndex].version == version) {
+            selTexts.splice(textIndex, 1);
+            break;
+        }
+    }
+    // Add the version to the unselected texts list
+    if (!unselTexts.hasOwnProperty(title)) {
+        unselTexts[title] = [version];
+    } else {
+        unselTexts[title].push(version);
+    }
+    // Update display
+    document.getElementById("unsel_nav").onchange();
+    document.getElementById("sel_nav").onchange();
+    // Update buttons
+    updateDivButtons();
 }

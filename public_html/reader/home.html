@@ -23,6 +23,11 @@
         </style>
 
         <script type="text/javascript" src="../lib/ajax.js"></script>
+        <script type="text/javascript" src="../lib/redirect.js"></script>
+        <script type="text/javascript" src="../lib/checkPrivileges.js"></script>
+        <script type="text/javascript">
+            checkPrivileges("reader");
+        </script>
         <script type="text/javascript" src="text.js" defer></script>
 
     </head>
@@ -38,7 +43,7 @@
         </div>
 
         <div class="bottom">
-            <input id="text_but" type="button" onclick="location.href='user/register.php';" value="Finish" disabled />
+            <input id="text_but" type="button" value="Finish" disabled />
         </div>
 
     </body>

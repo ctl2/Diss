@@ -5,10 +5,12 @@
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
 
-    include ("../lib/connectDB.php");
+    require_once("../lib/connectDB.php");
+    require_once("../lib/unboundQuery.php");
+    require_once("../lib/respond.php");
 
     function getAvailableTexts($conn, $username) {
-
+        // Get all texts that are either public or owned by the logged-in account
         $sql = "
             SELECT Texts.title, version, uploader, isPublic, targetAgeMin, targetAgeMax, targetGender
             FROM Texts
@@ -16,28 +18,26 @@
             WHERE uploader='$username' OR isPublic=" . true . "
             ORDER BY Texts.title
         ";
-
-        if (!$textRows = mysqli_query($conn, $sql)) respond(false, "Query failed: $conn->error");
+        $textRows = getQueryResult($conn, $sql);
+        // Build an array of returned text metadata
         $texts = array();
-
         while ($textRow = $textRows->fetch_assoc()) {
-            if (!$textRow) respond(false, "Fetch failed: $conn->error");
             $title = $textRow["title"];
             if (!array_key_exists($title, $texts)) {
                 $texts[$title] = array();
                 $texts[$title]["uploader"] = $textRow["uploader"];
                 $texts[$title]["isOwned"] = ($username == $textRow["uploader"]);
+                $texts[$title]["versions"] = array();
             }
-            $texts[$title][$textRow["version"]] = array(
+            $texts[$title]["versions"][$textRow["version"]] = array(
                 "isPublic" => $textRow["isPublic"],
                 "targetAgeMin" => $textRow["targetAgeMin"],
                 "targetAgeMax" => $textRow["targetAgeMax"],
                 "targetGender" => $textRow["targetGender"]
             );
         }
-
+        // Return the filled array
         return $texts;
-
     }
 
     $conn = connectDB();

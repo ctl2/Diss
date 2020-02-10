@@ -3,13 +3,14 @@ function setupTextTable(responseJSON) {
     if (response.success == false) {
         alert(response.message);
     } else {
-        allTexts = response.message;
+        allTexts = JSON.parse(response.message);
         unselTexts = {};
         selTexts = [];
         let textTable = document.getElementById("texts");
         appendTextRows(textTable);
         appendNavRow(textTable);
         document.getElementById("filter_button").click();
+        displaySelectedTexts(1);
     }
 }
 
@@ -28,18 +29,21 @@ function appendUnselectedTextCell(row_el, index) {
     textCell.classList.add("unselected");
     textCell.id = "unsel_" + index;
     // Make title div
-    let titleDiv = document.createElement("div");
-    titleDiv.id = "unsel_title_" + index;
+    let titleSpan = document.createElement("span");
+    titleSpan.id = "unsel_title_" + index;
     // make version selector
     let verSel = document.createElement("select");
     verSel.id = "unsel_ver_" + index;
     // Make button
     let selectButton = document.createElement("input");
     selectButton.type = "button";
-    selectButton.onclick = "select(unsel_title_" + index + ".value, unsel_ver_" + index + ".value)"
+    selectButton.onclick = () => select(
+        document.getElementById("unsel_title_" + index).innerText,
+        document.getElementById("unsel_ver_" + index).value
+    );
     selectButton.value = ">";
     // Connect
-    textCell.appendChild(titleDiv);
+    textCell.appendChild(titleSpan);
     textCell.appendChild(verSel);
     textCell.appendChild(selectButton);
     row_el.appendChild(textCell);
@@ -51,27 +55,31 @@ function appendSelectedTextCell(row_el, index) {
     textCell.classList.add("selected");
     textCell.id = "sel_" + index;
     // Make button
-    let deselectButton = document.createElement("input");
-    deselectButton.type = "button";
-    deselectButton.onclick = "unselect(sel_title_" + index + ".value, sel_ver_" + index + ".innerText)"
-    deselectButton.value = "<";
+    let unselectButton = document.createElement("input");
+    unselectButton.type = "button";
+    unselectButton.onclick = () => unselect(
+        document.getElementById("sel_title_" + index).innerText,
+        document.getElementById("sel_ver_" + index).innerText
+    );
+    unselectButton.value = "<";
     // Make title div
-    let titleDiv = document.createElement("div");
-    titleDiv.id = "sel_title_" + index;
+    let titleSpan = document.createElement("span");
+    titleSpan.id = "sel_title_" + index;
     // make version div
-    let verDiv = document.createElement("div");
-    verDiv.id = "sel_ver_" + index;
+    let verSpan = document.createElement("span");
+    verSpan.id = "sel_ver_" + index;
     // Connect
-    textCell.appendChild(deselectButton);
-    textCell.appendChild(titleDiv);
-    textCell.appendChild(verDiv);
+    textCell.appendChild(unselectButton);
+    textCell.appendChild(titleSpan);
+    textCell.appendChild(document.createTextNode(" v"));
+    textCell.appendChild(verSpan);
     row_el.appendChild(textCell);
 }
 
 function appendNavRow(table_el) {
     let navRow = document.createElement("tr");
-    appendNavCell(navRow, "sel");
     appendNavCell(navRow, "unsel");
+    appendNavCell(navRow, "sel");
     table_el.appendChild(navRow);
 }
 
@@ -81,10 +89,10 @@ function appendNavCell(row_el, id) {
     let navCellText = document.createTextNode("Page ");
     let navCellSel = document.createElement("select");
     navCellSel.id = id + "_nav";
-    if (id = "unsel") {
-        navCellSel.onchange = "setUnselectedPage(this.value)";
+    if (id == "unsel") {
+        navCellSel.onchange = () => displayUnselectedTexts(navCellSel.value);
     } else {
-        navCellSel.onchange = "setSelectedPage(this.value)";
+        navCellSel.onchange = () => displaySelectedTexts(navCellSel.value);
     }
     // Connect components
     navCell.appendChild(navCellText);
@@ -94,4 +102,4 @@ function appendNavCell(row_el, id) {
 
 const textRows = 5;
 
-postRequest([], "../../private/researcher/getAvailableTexts.php", setupTextTable, alert);
+postRequest([], "../../private/researcher/getAvailableTexts.php", setupTextTable, alert, true);

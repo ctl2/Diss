@@ -1,5 +1,5 @@
 // function adapted from https://stackoverflow.com/a/7165616
-function postRequest(data, url, success, failure) {
+function postRequest(data, url, success, failure, async) {
 
     var req = false;
 
@@ -28,7 +28,7 @@ function postRequest(data, url, success, failure) {
         }
     };
 
-    req.open('POST', url, true);
+    req.open('POST', url, async);
     req.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
     req.send(data.join('&'));
     return req;

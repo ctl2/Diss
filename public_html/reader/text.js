@@ -2,19 +2,21 @@
 
 class Session {
 
-    const charIdPrefix = "char";
-    const shownChar = "&#9618";
-    const unshownChar = "&#9619";
-    const windowSizeLeft = 4;
-    const windowSizeRight = 12;
-    const timer = new FixationTimer();
+    charIdPrefix = "char";
+    shownChar = "&#9618";
+    unshownChar = "&#9619";
+    windowSizeLeft = 4;
+    windowSizeRight = 12;
+    timer = new FixationTimer();
 
     constructor(text) {
         this.text = text;
         this.currentWindow = [];
         this.leftmostUnshownCharIndex = 0;
-        document.getElementById("text_but").disabled = 'disabled';
-        window.addEventListener('resize', drawCharacters);
+        let finishButton = document.getElementById("text_but");
+        finishButton.disabled = 'disabled';
+        finishButton.onclick = () => this.timer.uploadLog();
+        window.addEventListener('resize', () => this.drawCharacters());
         this.drawCharacters();
     }
 
@@ -37,12 +39,14 @@ class Session {
     }
 
     closeWindow() {
-        // Hide characters and remove all items from the currentWindow list
-        while (this.currentWindow.length > 0) {
-            this.maskCharacter(this.currentWindow.shift());
+        if (this.currentWindow.length > 0) {
+            // Hide characters and remove all items from the currentWindow list
+            while (this.currentWindow.length > 0) {
+                this.maskCharacter(this.currentWindow.shift());
+            }
+            // Record fixation end time
+            this.timer.recordFixationEnd();
         }
-        // Record fixation end time
-        this.timer.recordFixationEnd();
     }
 
     getWindowBoundaries(originCharIndex) {
@@ -78,7 +82,7 @@ class Session {
             }
             // Update the boundary of seen text
             this.leftmostUnshownCharIndex = Math.max(this.leftmostUnshownCharIndex, windowBoundaries.rightmostCharIndex + 1);
-            if (this.leftmostUnshownCharIndex === text.length) document.getElementById("text_but").removeAttribute("disabled");
+            if (this.leftmostUnshownCharIndex === this.text.length) document.getElementById("text_but").removeAttribute("disabled");
             // Start timing the window fixation
             this.timer.recordFixationStart(windowBoundaries);
         }
@@ -96,19 +100,19 @@ class Session {
         lineDiv.appendChild(wordSpan);
         wordSpan.classList.add("word");
         // Create and display character elements
-        for (let i = 0; i < text.length; i++) {
+        for (let i = 0; i < this.text.length; i++) {
             // Create a new character element
             let charSpan = document.createElement("span");
             // Connect it to a parent word element
             wordSpan.appendChild(charSpan);
             // Set its properties
             charSpan.classList.add("char");
-            charSpan.id = charIdPrefix + "_" + i;
-            charSpan.onmouseover = function() {this.openWindow(i)};
-            charSpan.onmouseout = function() {this.closeWindow()};
+            charSpan.id = this.charIdPrefix + "_" + i;
+            charSpan.onmouseover = () => this.openWindow(i);
+            charSpan.onmouseout = () => this.closeWindow();
             this.maskCharacter(i);
-            // Handle word-ending characters
-            if (this.isWhiteSpace(i)) {
+            // Handle word-endings
+            if (this.isWhiteSpace(i) || i === this.text.length - 1) {
                 // Handle line-overflowing words
                 if (wordSpan.getBoundingClientRect().right >= window.innerWidth*0.96) {
                     // Create a new line element and form its connections
@@ -117,10 +121,12 @@ class Session {
                     lineDiv.classList.add("line");
                     lineDiv.appendChild(wordSpan);
                 }
-                // Create a new word and append it to the current line element
-                wordSpan = document.createElement("span");
-                lineDiv.appendChild(wordSpan);
-                wordSpan.classList.add("word");
+                if (i !== this.text.length - 1) {
+                    // Create a new word and append it to the current line element
+                    wordSpan = document.createElement("span");
+                    lineDiv.appendChild(wordSpan);
+                    wordSpan.classList.add("word");
+                }
             }
         }
     }
@@ -141,7 +147,7 @@ class FixationTimer {
         this.log.push({
             leftmostCharIndex: windowBoundaries.leftmostCharIndex,
             rightmostCharIndex: windowBoundaries.rightmostCharIndex,
-            openOffset: window.performance.measure("", "end", "start").duration;
+            openOffset: window.performance.measure("", "end", "start").duration
         });
         window.performance.clearMeasures("");
         window.performance.clearMarks("end");
@@ -163,10 +169,10 @@ class FixationTimer {
             ], '../../private/reader/uploadReadingData.php', this.success, alert);
     }
 
-    success(response) {
-        let responseObject = JSON.parse(response);
-        if (responseObject.success == false) {
-            alert(responseObject.message);
+    success(responseJSON) {
+        let response = JSON.parse(responseJSON);
+        if (response.success == false) {
+            alert(response.message);
         } else if (window.confirm("Would you like to read another text?")) {
             startNewSession();
         } else {
@@ -208,9 +214,9 @@ class MediaChecker {
 
     isAcceptable() {
         this.acceptable = true;
-        checkPointer();
-        checkHover();
-        checkPerformance();
+        this.checkPointer();
+        this.checkHover();
+        this.checkPerformance();
         return this.acceptable;
     }
 
@@ -233,21 +239,30 @@ function start() {
     if (!mediaChecker.isAcceptable()) {
         mediaChecker.displayError();
     } else {
-        startNewReadingSession();
+        startNewSession();
     }
 }
 
 function startNewSession() {
     // Get an unread text and pass it to the startSession function
-    postRequest(["log=" + JSON.stringify(this.log)], '../../private/reader/getUnreadTextString.php', startSession, alert);
+    postRequest([], '../../private/reader/getUnreadTextString.php', startSession, alert, true);
 }
 
-function startSession(text) {
-    session = new Session(text);
+function startSession(responseJSON) {
+    let response = JSON.parse(responseJSON);
+    if (response.success) {
+        session = new Session(response.message);
+    } else {
+        if (confirm(response.message + " Would you like to retry?")) {
+            startNewSession();
+        } else {
+            redirect("");
+        }
+    }
 }
 
 function logout() {
-    postRequest([], '../../private/lib/logout.php', () => location.href='../login/login.html'), alert);
+    postRequest([], '../../private/lib/logout.php', () => location.href='../login/login.html', alert, false);
 }
 
 var session;

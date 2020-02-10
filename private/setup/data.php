@@ -2,7 +2,7 @@
 
     error_reporting(E_ALL);
 
-    include ("../lib/connectDB.php");
+    require ("../lib/connectDB.php");
 
     function addToReviewer($conn, $username, $password, $email, $name) {
         $sql = $conn->prepare("INSERT INTO Reviewers(username, password, email, name) VALUES (?, ?, ?, ?)");

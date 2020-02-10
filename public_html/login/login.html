@@ -11,10 +11,11 @@
 
         </style>
         <script type="text/javascript" src="../lib/ajax.js"></script>
+        <script type="text/javascript" src="../lib/redirect.js"></script>
         <script type="text/javascript" src="../lib/login.js"></script>
         <script type="text/javascript">
             function attemptLogin(username_el, password_el) {
-                postRequest([username_el, password_el].map(el => el.id + '=' + el.value), "../../private/login/login.php", login, alert);
+                postRequest([username_el, password_el].map(el => el.id + '=' + el.value), "../../private/login/login.php", login, alert, true);
             }
         </script>
 
@@ -31,19 +32,19 @@
             <div class="left">
 
                 Username
-                <input id="username" type="text" required autofocus>
+                <input id="username" type="text" required autofocus><br>
 
                 Password
-                <input id="password" type="password" required>
+                <input id="password" type="password" required><br>
 
-                <input class="button" onclick="attemptLogin(username, password)" value="Login">
+                <input type="button" onclick="attemptLogin(username, password)" value="Login"><br>
 
             </div>
 
             <div class="right">
 
                 Not registered yet?<br>
-                <input class="button" onclick="location.href='user/register.php';" value="Click here" />
+                <input type="button" onclick="location.href='../register/register.html';" value="Click here" />
 
             </div>
 

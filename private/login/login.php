@@ -5,18 +5,15 @@
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
 
-    include ("../lib/connectDB.php");
-    include ("../lib/respond.php");
+    require_once("../lib/connectDB.php");
+    require_once("../lib/getPostVar.php");
+    require_once("../lib/unboundQuery.php");
+    require_once("../lib/respond.php");
+    require_once("../lib/login.php");
 
     function getAccountTypeResult($conn, $username, $password) {
         $sql = "SELECT accountType FROM Accounts WHERE username='$username' AND password='$password'";
-        return mysqli_query($conn, $sql);
-    }
-
-    function login($username, $accountType) {
-        $_SESSION["username"] = $username;
-        $_SESSION["accountType"] = $accountType;
-        respond(true, $accountType);
+        return getQueryResult($conn, $sql);
     }
 
     $conn = connectDB();
@@ -24,21 +21,21 @@
     $username = getPostVar("username");
     $password = getPostVar("password");
 
-    $accountTypeRes = getAccountTypeResult($conn, $username, $password);
+    $accountTypeRows = getAccountTypeResult($conn, $username, $password);
 
-    if (mysqli_num_rows($accountTypeRes) === 0) respond(false, 'Username was not recognised.');
+    if (mysqli_num_rows($accountTypeRows) === 0) respond(false, 'Account details were not recognised.');
 
-    switch ($accountTypeRes->fetchAssoc['accountType']) {
+    switch ($accountTypeRows->fetch_assoc()['accountType']) {
         case "reader":
-            login($_POST["username"], "reader");
+            login($username, "reader");
             break;
         case "researcher":
-            login($_POST["username"], "researcher");
+            login($username, "researcher");
             break;
         case "reviewer":
-            login($_POST["username"], "reviewer");
+            login($username, "reviewer");
         default:
-            respond(false, "Account type was not recognised.")
+            respond(false, "Account type was not recognised.");
     }
 
 ?>

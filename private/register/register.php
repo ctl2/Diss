@@ -2,36 +2,32 @@
 
     session_start();
 
-    error_reporting(E_ALL);
-    ini_set('display_errors', 1);
-
-    include ("../lib/connectDB.php");
+    require_once("../lib/connectDB.php");
+    require_once("../lib/getPostVar.php");
+    require_once("../lib/boundQuery.php");
+    require_once("../lib/respond.php");
+    require_once("../lib/login.php");
 
     function isTaken($conn, $username) {
-        if (!$sql = $conn->prepare("SELECT NULL FROM Accounts WHERE username=?")) respond(false, "Preparation failed: $conn->error");
-        if (!$sql->bind_param("s", $username)) respond(false, "Binding failed: $conn->error");
-
-        if (!$sql->execute()) respond(false, "Execution failed: $conn->error");
-
-        return $sql->num_rows > 0;
+        $sql = "SELECT NULL FROM Accounts WHERE username=?";
+        $typeString = "s";
+        $valueArray = array(&$username);
+        $rows = makeBoundQuery($conn, $sql, $typeString, $valueArray);
+        return $rows->num_rows > 0;
     }
 
     function createReaderAccount($conn, $username, $password, $dob, $gender, $dis) {
-
-        if (!$sql = $conn->prepare("INSERT INTO Readers (username, password, dob, gender, dis) VALUES (?, ?, ?, ?, ?)")) respond(false, "Preparation failed: $conn->error");
-        if (!$sql->bind_param("ssssi", $username, $password, $dob, $gender, $dis)) respond(false, "Binding failed: $conn->error");
-
-        if (!$sql->execute()) respond(false, "Execution failed: $conn->error");
-
+        $sql = "INSERT INTO Readers (username, password, dob, gender, dis) VALUES (?, ?, ?, ?, ?)";
+        $typeString = "ssssi";
+        $valueArray = array(&$username, &$password, &$dob, &$gender, &$dis);
+        makeBoundQuery($conn, $sql, $typeString, $valueArray);
     }
 
     function createResearcherAccount($conn, $username, $password) {
-
-        if (!$sql = $conn->prepare("INSERT INTO Researchers (username, password) VALUES (?, ?)")) respond(false, "Preparation failed: $conn->error");
-        if (!$sql->bind_param("ss", $username, $password)) respond(false, "Binding failed: $conn->error");
-
-        if (!$sql->execute()) respond(false, "Execution failed: $conn->error");
-
+        $sql = "INSERT INTO Researchers (username, password) VALUES (?, ?)";
+        $typeString = "ss";
+        $valueArray = array(&$username, &$password);
+        makeBoundQuery($conn, $sql, $typeString, $valueArray);
     }
 
     $conn = connectDB();
@@ -48,7 +44,7 @@
         $gender = getPostVar("gender");
         $dis = getPostVar("dis");
 
-        createReaderAccount($username, $password, $dob, $gender, $dis);
+        createReaderAccount($conn, $username, $password, $dob, $gender, $dis);
 
     } else {
 
@@ -60,9 +56,6 @@
 
     }
 
-    $_SESSION["username"] = $username;
-    $_SESSION["accType"] = $accType;
-
-    respond(true, $accType);
+    login($username, $accType);
 
 ?>
