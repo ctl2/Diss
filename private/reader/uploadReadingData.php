@@ -13,7 +13,7 @@
     function createReadingEntry($conn, $title, $version, $reader, $availWidth, $availHeight) {
         // Make a bound query for a single insert into the Readings table
         $sql = "INSERT INTO Readings (title, version, reader, availWidth, availHeight) VALUES (?, ?, ?, ?, ?)";
-        $typeString = "sisii";
+        $typeString = "sssii";
         $valueArray = array(&$title, &$version, &$reader, &$availWidth, &$availHeight);
         makeBoundQuery($conn, $sql, $typeString, $valueArray);
     }
@@ -24,14 +24,14 @@
             INSERT INTO Windows (title, version, reader, sequenceNumber, leftmostChar, rightmostChar, openOffset, closeOffset)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ";
-        $typeString = "sisiiidd";
+        $typeString = "sssiiidd";
         $valueArray = array(&$title, &$version, &$reader, &$sequenceNumber, &$leftmostChar, &$rightmostChar, &$openOffset, &$closeOffset);
         $binding = getBoundQuery($conn, $sql, $typeString, $valueArray);
         // Execute the bound query once for each set of values in the $log array
         for ($sequenceNumber = 0; $sequenceNumber < count($log); $sequenceNumber++) {
             $logEntry = $log[$sequenceNumber];
-            $leftmostChar = $logEntry['leftmostCharIndex'];
-            $rightmostChar = $logEntry['rightmostCharIndex'];
+            $leftmostChar = $logEntry['leftmostChar'];
+            $rightmostChar = $logEntry['rightmostChar'];
             $openOffset = $logEntry['openOffset'];
             $closeOffset = $logEntry['closeOffset'];
             executeBoundQuery($conn, $binding);

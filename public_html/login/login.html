@@ -15,7 +15,7 @@
         <script type="text/javascript" src="../lib/login.js"></script>
         <script type="text/javascript">
             function attemptLogin(username_el, password_el) {
-                postRequest([username_el, password_el].map(el => el.id + '=' + el.value), "../../private/login/login.php", login, alert, true);
+                postRequest([username_el, password_el].map(el => el.id + '=' + el.value), "../../private/login/login.php", login, alert);
             }
         </script>
 

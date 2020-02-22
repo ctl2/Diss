@@ -14,7 +14,7 @@
         $stmt = $conn->prepare($sql);
         if(!$stmt) respond(false, "Preparation failed: \n$conn->errno \n$conn->error");
         // Bind parameters
-        if (!call_user_func_array(array($stmt, 'bind_param'), $params)) repond(false, "Binding failed: \n$conn->errno \n$conn->error");
+        if (!call_user_func_array(array($stmt, 'bind_param'), $params)) respond(false, "Binding failed: \n$conn->errno \n$conn->error");
         // Return binding
         return $stmt;
     }

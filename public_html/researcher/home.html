@@ -19,6 +19,7 @@
         <script type="text/javascript">
             checkPrivileges("researcher");
         </script>
+
         <script type="text/javascript" src="javascript/divs/lib.js"></script>
         <script type="text/javascript" src="javascript/divs/filter.js"></script>
         <script type="text/javascript" src="javascript/divs/upload.js"></script>
@@ -76,9 +77,9 @@
 
                 <div class="left">
                     Title <input id="up_title" type="text" /><br>
-                    Version <span id="up_ver"></span><br>
+                    Version  <input id="up_ver" form="up_reset" type="text" /><br>
                     File <input id="up_file" form="up_reset" type="file" /><br>
-                    Make Text and Associated Reading Data Public
+                    Make Version's Text and Associated Reading Data Public
                     <input id="up_is_public" form="up_reset" type="checkbox" /><br>
                 </div>
 
@@ -137,36 +138,46 @@
 
             <div id="an" hidden>
 
-                <h2 id="an_title"></h2>
-                <br>
-
-                <select id="an_average_sel">
-                    <option value="mean">Mean</option>
-                    <option value="median">Median</option>
-                    <option value="mode">Mode</option>
-                </select>
-                <select id="an_graphic_sel">
-                    <option value="csv">CSV</option>
-                    <option value="heatmap">Heatmap</option>
-                    <option value="graph">Graph</option>
-                </select>
-                <select id="an_statistic_sel">
-                    <option value="first_fix">First-Fixation Duration</option>
-                    <option value="gaze">Gaze Duration</option>
-                    <option value="spill">Spillover Time</option>
-                    <option value="reg_in">Regressions In</option>
-                    <option value="reg_out">Regressions Out</option>
-                </select>
-                <br>
-
-                <select id="an_gender_sel" form="an_reset">
-                    <option value="all">All</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                </select>
                 <div>
-                    Minimum age: <input id="an_min_age_sel" form="an_reset" type="number" />
-                    Maximum age: <input id="an_max_age_sel" form="an_reset" type="number" />
+                    <h2 id="an_title"></h2> <h2 id="an_version"></h2>
+                </div>
+                <div>
+                    Average:
+                    <select id="an_average_sel">
+                        <option value="mean">Mean</option>
+                        <option value="median">Median</option>
+                        <option value="mode">Mode</option>
+                    </select>
+                </div>
+                <div>
+                    Graphic:
+                    <select id="an_graphic_sel">
+                        <option value="csv">CSV</option>
+                        <option value="heatmap">Heatmap</option>
+                        <option value="graph">Graph</option>
+                    </select>
+                </div>
+                <div>
+                    Statistic:
+                    <select id="an_statistic_sel">
+                        <option value="first_fix">First-Fixation Duration</option>
+                        <option value="gaze">Gaze Duration</option>
+                        <option value="spill">Spillover Time</option>
+                        <option value="reg_in">Regressions In</option>
+                        <option value="reg_out">Regressions Out</option>
+                    </select>
+                </div>
+                <div>
+                    Gender:
+                    <select id="an_gender_sel" form="an_reset">
+                        <option value="all">All</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </div>
+                <div>
+                    Minimum age: <input id="an_min_age_sel" form="an_reset" type="number" min="0" max="255" value="0" />
+                    Maximum age: <input id="an_max_age_sel" form="an_reset" type="number" min="0" max="255" value="255" />
                 </div>
                 <input type="button" onclick="download()" value="Download" />
 

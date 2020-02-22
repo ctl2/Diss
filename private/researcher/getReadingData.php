@@ -8,12 +8,29 @@
     require_once("../lib/unboundQuery.php");
     require_once("../lib/respond.php");
 
-    function getReadingData($conn, $reader, $title, $version) {
+    function getReaders($conn, $title, $version) {
+        // Retrieve the usernames of all reader accounts that have been assigned the given text
+        $sql = "
+            SELECT DISTINCT reader
+            FROM Windows
+            WHERE title='$title' AND version='$version'
+        ";
+        $readerRows = getQueryResult($conn, $sql);
+        // Process the result object
+        $readerArray = array();
+        while ($readerRow = $readerRows->fetch_assoc()) {
+            array_push($readerArray, $readerRow['reader']);
+        }
+        // Return the result array
+        return $readerArray;
+    }
+
+    function getReadingData($conn, $title, $version, $reader) {
         // Get all measurements from the given reading session
         $sql = "
             SELECT leftmostChar, rightmostChar, openOffset, closeOffset
             FROM Windows
-            WHERE reader='$reader' AND title='$title' AND version=$version
+            WHERE title='$title' AND version='$version' AND reader='$reader'
             ORDER BY sequenceNumber
         ";
         $dataRows = getQueryResult($conn, $sql);
@@ -23,12 +40,19 @@
 
     $conn = connectDB();
 
-    $reader = getPostVar($_POST["reader"]);
-    $title = getPostVar($_POST["title"]);
-    $version = getPostVar($_POST["version"]);
+    if (!isset($_POST["title"]) || !isset($_POST["version"])) {
+        if (!isset($_SESSION["title"]) || !isset($_SESSION["version"])) respond(false, "No text provided.");
+    } else {
+        $_SESSION["title"] = $_POST["title"];
+        $_SESSION["version"] = $_POST["version"];
+        $_SESSION["remainingReaders"] = getReaders($conn, $_POST["title"], $_POST["version"]);
+    }
 
-    $readingData = getReadingData($conn, $reader, $title, $version);
+    $nextReader = array_pop($_SESSION["remainingReaders"]);
+    if ($nextReader === NULL) respond(true, "");
 
-    respond(true, $readingData);
+    $readingData = getReadingData($conn, $_SESSION["title"], $_SESSION["version"], $nextReader);
+
+    respond(true, json_encode($readingData));
 
 ?>

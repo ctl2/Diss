@@ -6,5 +6,5 @@ function reviewPrivileges(responseJSON) {
 }
 
 function checkPrivileges(accountType) {
-    postRequest(["accountType=" + accountType], "../../private/lib/checkPrivileges.php", reviewPrivileges, redirect, false);
+    let req = postRequest(["accountType=" + accountType], "../../private/lib/checkPrivileges.php", reviewPrivileges, redirect);
 }

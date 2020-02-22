@@ -7,7 +7,7 @@
         $sql = "
             SELECT chara
             FROM Characters
-            WHERE title='$title' AND version=$version
+            WHERE title='$title' AND version='$version'
             ORDER BY sequenceNumber
         ";
         $charRows = getQueryResult($conn, $sql);

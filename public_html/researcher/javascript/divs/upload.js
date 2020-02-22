@@ -1,28 +1,17 @@
 'use strict';
 
 function showUploadDiv(isNewText) {
-    // Prepare the title and version input elements
+    // Prepare the title input element
     let title_el = document.getElementById("up_title");
-    let ver_el = document.getElementById("up_ver");
     if (isNewText) {
         // Title is blank and enabled
         title_el.value = "";
         title_el.removeAttribute("disabled");
-        // Version = 1
-        ver_el.innerText = "1";
     } else {
         // Title is set and disabled
         let title = selTexts[0].title;
         title_el.value = title;
         title_el.disabled = "disabled";
-        // Find the highest current version
-        let highestVersion = 0;
-        for (let version in allTexts[title].versions) {
-            let versionNum = Number(version);
-            if (versionNum > highestVersion) highestVersion = versionNum;
-        }
-        // Version = highest + 1
-        ver_el.innerText = highestVersion + 1;
     }
     // Show only the upload div
     hideDivs("up");
@@ -42,10 +31,10 @@ function upload() {
             }
             if (datum.value !== null) data.push(datumName + "=" + datum.value);
         }
-        if (data) {
+        if (data !== undefined) {
             let versionEl = document.getElementById("up_ver");
-            data.push("version=" + versionEl.innerText);
-            postRequest(data, "../../private/researcher/uploadText.php", uploadSuccess, alert, true);
+            data.push("isNew=" + document.getElementById("up_title").disabled != "disabled");
+            postRequest(data, "../../private/researcher/uploadText.php", uploadSuccess, alert);
         }
     });
 }
@@ -68,6 +57,7 @@ class InputProcessor {
 
     constructor() {
         this.data["title"] = {el: document.getElementById("up_title")};
+        this.data["version"] = {el: document.getElementById("up_ver")};
         this.data["text"] = {el: document.getElementById("up_file")};
         this.data["isPublic"] = {el: document.getElementById("up_is_public")};
         this.data["minAge"] = {el: document.getElementById("up_min_age")};
@@ -75,15 +65,17 @@ class InputProcessor {
         this.data["gender"] = {el: document.getElementById("up_gender")};
     }
 
-    async process() {
+    process() {
         this.processTitle();
-        await this.processFile();
+        this.processVersion();
+        this.processFile();
         this.processIsPublic();
         this.processMinAge();
         this.processMaxAge();
         this.processGender();
     }
 
+    // Checks for duplicate titles are done on the server side.
     processTitle() {
         let title = this.data["title"].el.value;
         if (title == "") {
@@ -92,6 +84,18 @@ class InputProcessor {
             this.flag("title", false, "Titles must be 30 characters or less.");
         } else {
             this.flag("title", true, title);
+        }
+    }
+
+    // Checks for duplicate versions are done on the server side
+    processVersion() {
+        let version = this.data["version"].el.value;
+        if (version == "") {
+            this.flag("version", false, "Please provide a version name.");
+        } else if (version.length > 10) {
+            this.flag("version", false, "Version names must be 10 characters or less.");
+        } else {
+            this.flag("version", true, version);
         }
     }
 

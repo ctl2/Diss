@@ -1,3 +1,5 @@
+const textRows = 5; // The amount of texts per page
+
 function setupTextTable(responseJSON) {
     let response = JSON.parse(responseJSON);
     if (response.success == false) {
@@ -100,6 +102,4 @@ function appendNavCell(row_el, id) {
     row_el.appendChild(navCell);
 }
 
-const textRows = 5;
-
-postRequest([], "../../private/researcher/getAvailableTexts.php", setupTextTable, alert, true);
+postRequest([], "../../private/researcher/getAvailableTexts.php", setupTextTable, alert);

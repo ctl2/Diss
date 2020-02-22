@@ -143,7 +143,7 @@
         $sql = "
             CREATE TABLE `$tableName` (
                 title VARCHAR(30) NOT NULL,
-                version TINYINT UNSIGNED NOT NULL,
+                version VARCHAR(10) NOT NULL,
                 uploadDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 isPublic BINARY NOT NULL,
                 targetAgeMin TINYINT UNSIGNED,
@@ -164,7 +164,7 @@
         $sql = "
             CREATE TABLE `$tableName` (
                 title VARCHAR(30) NOT NULL,
-                version TINYINT UNSIGNED NOT NULL,
+                version VARCHAR(10) UNSIGNED NOT NULL,
                 sequenceNumber SMALLINT UNSIGNED NOT NULL,
                 chara VARCHAR(1) NOT NULL,
                 PRIMARY KEY (title, version, sequenceNumber),
@@ -182,7 +182,7 @@
         $sql = "
             CREATE TABLE `$tableName` (
                 title VARCHAR(30) NOT NULL,
-                version TINYINT UNSIGNED NOT NULL,
+                version VARCHAR(10) UNSIGNED NOT NULL,
                 reader VARCHAR(10) NOT NULL,
                 availWidth SMALLINT UNSIGNED NOT NULL,
                 availHeight SMALLINT UNSIGNED NOT NULL,
@@ -201,17 +201,17 @@
         $tableName = "Windows";
         $sql = "
             CREATE TABLE `$tableName` (
-                reader VARCHAR(10) NOT NULL,
                 title VARCHAR(30) NOT NULL,
-                version TINYINT UNSIGNED NOT NULL,
+                version VARCHAR(10) UNSIGNED NOT NULL,
+                reader VARCHAR(10) NOT NULL,
                 sequenceNumber SMALLINT UNSIGNED NOT NULL,
                 leftmostChar SMALLINT UNSIGNED NOT NULL,
                 rightmostChar SMALLINT UNSIGNED NOT NULL,
-                -- Maximum offset time is 10 seconds
+                -- With DECIMAL(7,2), maximum offset time is 10 seconds
                 openOffset DECIMAL(7,2) UNSIGNED NOT NULL,  -- The number of milliseconds between closing the previous window and opening this one
                 closeOffset DECIMAL(7,2) UNSIGNED NOT NULL, -- The number of milliseconds between opening and closing this window
-                PRIMARY KEY (reader, title, version, sequenceNumber),
-                FOREIGN KEY (reader, title, version) references Readings (reader, title, version) ON UPDATE cascade ON DELETE cascade,
+                PRIMARY KEY (title, version, reader, sequenceNumber),
+                FOREIGN KEY (title, version, reader) references Readings (title, version, reader) ON UPDATE cascade ON DELETE cascade,
                 FOREIGN KEY (title, version, leftmostChar) references Characters (title, version, sequenceNumber) ON UPDATE cascade ON DELETE cascade,
                 FOREIGN KEY (title, version, rightmostChar) references Characters (title, version, sequenceNumber) ON UPDATE cascade ON DELETE cascade
             ) ENGINE=InnoDB

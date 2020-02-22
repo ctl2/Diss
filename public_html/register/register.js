@@ -10,7 +10,7 @@ function register(username_el, password1_el, password2_el, acc_type_el, info_div
     let validator = new Validator(input_els);
     validator.validate();
     if (!validator.invalid) {
-        postRequest(input_els.map(el => el.id + '=' + el.value), "../../private/register/register.php", login, alert, true);
+        postRequest(input_els.map(el => el.id + '=' + el.value), "../../private/register/register.php", login, alert);
     }
 
 }

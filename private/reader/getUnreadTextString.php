@@ -20,7 +20,7 @@
                 FROM Readings
                 WHERE Versions.title = Readings.title
                 AND Versions.version = Readings.version
-                AND reader='reader'
+                AND reader='$reader'
             )
             ORDER BY uploadDate DESC
             LIMIT 1

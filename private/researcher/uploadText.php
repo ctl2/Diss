@@ -18,7 +18,7 @@
         // Get an array of all possible query parameters and associated data
         $params = array(
             "title" => array("s", &$title),
-            "version" => array("i", &$version),
+            "version" => array("s", &$version),
             "isPublic" => array("i", &$isPublic),
             "targetAgeMin" => array("i", &$targetAgeMin),
             "targetAgeMax" => array("i", &$targetAgeMax),
@@ -43,7 +43,7 @@
     function createCharactersEntry($conn, $title, $version, $text) {
         // Make a bound query for a single insert into the Characters table
         $sql = "INSERT INTO Characters (title, version, sequenceNumber, chara) VALUES (?, ?, ?, ?)";
-        $typeString = "siis";
+        $typeString = "ssis";
         $valueArray = array(&$title, &$version, &$sequenceNumber, &$chara);
         $binding = getBoundQuery($conn, $sql, $typeString, $valueArray);
         // Execute the bound query once for each character in the $text string
@@ -56,6 +56,7 @@
     // Connect to the database
     $conn = connectDB();
     // Retrieve mandatory arguments
+    $isNew = getPostVar('isNew');
     $text = getPostVar('text');
     $title = getPostVar('title');
     $version = getPostVar('version');
@@ -67,7 +68,9 @@
     // Group all queries into a single transaction
     if (!$conn->autocommit(false)) respond(false, "Failed to start transaction: $conn->error");
     // Make queries
-    if ($version == "1") createTextEntry($conn, $title, $_SESSION['username']);
+    if ($isNew == true) {
+        createTextEntry($conn, $title, $_SESSION['username']);
+    }
     createVersionEntry($conn, $title, $version, $isPublic, $targetAgeMin, $targetAgeMax, $targetGender);
     createCharactersEntry($conn, $title, $version, $text);
     // Commit queries
