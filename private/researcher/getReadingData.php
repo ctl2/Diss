@@ -1,5 +1,7 @@
 <?php
 
+    session_start();
+
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
 
@@ -34,8 +36,17 @@
             ORDER BY sequenceNumber
         ";
         $dataRows = getQueryResult($conn, $sql);
-        // Return an unprocessed associative array of the result object
-        return $dataRows->fetch_all(MYSQLI_ASSOC);
+        // Process the result object
+        $dataArray = array();
+        while ($dataRow = $dataRows->fetch_assoc()) {
+            // Even using the MYSQLI_OPT_INT_AND_FLOAT_NATIVE option, mysqli returns values of type DECIMAL as strings
+            // https://stackoverflow.com/questions/18362598/mysql-decimal-fields-returned-as-strings-in-php
+            $dataRow['openOffset'] = (float) $dataRow['openOffset'];
+            $dataRow['closeOffset'] = (float) $dataRow['closeOffset'];
+            array_push($dataArray, $dataRow);
+        }
+        // Return the result array
+        return $dataArray;
     }
 
     $conn = connectDB();

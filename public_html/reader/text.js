@@ -132,32 +132,26 @@ class Session {
     }
 
     uploadSession() {
-        this.showReplay(getCriticalPath(this.timer.log));
+        this.timer.endTimer();
+        postRequest([
+            "log=" + JSON.stringify(this.timer.log),
+            "availWidth=" + window.screen.availWidth,
+            "availHeight=" + window.screen.availHeight
+            ], '../../private/reader/uploadReadingData.php', this.success, alert
+        );
     }
 
-    // uploadSession() {
-    //     this.timer.endTimer();
-    //     postRequest([
-    //         "log=" + JSON.stringify(this.timer.log),
-    //         "availWidth=" + window.screen.availWidth,
-    //         "availHeight=" + window.screen.availHeight
-    //         ], '../../private/reader/uploadReadingData.php', this.success, alert
-    //     );
-    // }
-    //
-    // success(responseJSON) {
-    //     let response = JSON.parse(responseJSON);
-    //     if (response.success == false) {
-    //         alert(response.message);
-    //     } else if (window.confirm("Would you like to watch our filtered session replay?")) {
-    //         this.showReplay(getCriticalPath(this.timer.log));
-    //     }
-    //     if (window.confirm("Would you like to read another text?")) {
-    //         startNewSession();
-    //     } else {
-    //         logout();
-    //     }
-    // }
+    success(responseJSON) {
+        let response = JSON.parse(responseJSON);
+        if (response.success == false) {
+            alert(response.message);
+        }
+        if (window.confirm("Would you like to read another text?")) {
+            startNewSession();
+        } else {
+            logout();
+        }
+    }
 
     showReplay(windows, prevChar) {
         if (prevChar !== undefined) prevChar.onmouseout();
@@ -165,12 +159,6 @@ class Session {
             let curWindow = windows.shift();
             let curChar = document.getElementById("char_" + (curWindow.leftmostChar + this.windowSizeLeft));
             curChar.onmouseover();
-            if (curWindow.closeOffset > 200) {
-                console.log("PAUSE: ");
-                console.log(document.getElementById("char_" + curWindow.leftmostChar));
-                console.log(document.getElementById("char_" + curWindow.rightmostChar));
-                console.log("")
-            }
             window.setTimeout((windows, curChar) => this.showReplay(windows, curChar), curWindow.closeOffset, windows, curChar);
         }
     }
