@@ -32,56 +32,86 @@ function success(responseJSON) {
     }
 }
 
-class WindowToCharPathConvertor {
+class SortedNumberList {
 
-    pauseThresholdPercent = 5;
+    list = [];
+
+    removeSmallest() {
+        return this.list.shift();
+    }
+
+    getSmallest() {
+        return this.list[0];
+    }
+
+    // O(log(n)) complexity search algorithm
+    contains(number, list = this.list) {
+        if (list.length === 0) return false;
+        let nextIndex = Math.floor(list.length / 2);
+        let nextNumber = list[nextIndex];
+        if (number === nextNumber) {
+            return true;
+        } else if (number > nextNumber) {
+            return this.contains(number, list.slice(nextIndex + 1));
+        } else {
+            return this.contains(number, list.slice(0, nextIndex));
+        }
+    }
+
+    // O(log(n)) complexity search algorithm
+    getIndex(number, list = this.list) {
+        if (list.length === 0) return 0;
+        let nextIndex = Math.floor(list.length / 2);
+        let nextNumber = list[nextIndex];
+        if (number > nextNumber) {
+            return nextIndex + 1 + this.getIndex(number, list.slice(nextIndex + 1));
+        } else {
+            return 0 + this.getIndex(number, list.slice(0, nextIndex));
+        }
+    }
+
+    insert(number) {
+        let index = this.getIndex(number);
+        this.list.splice(index, 0, number);
+    }
+
+}
+
+class WindowToCharPathConvertor {
 
     constructor(windowPath) {
         this.windowPath = windowPath;
         this.minPauseTime = this.getMinPauseTime();
     }
 
-    // O(log(n)) complexity search algorithm
-    getPosition(number, sortedArray) {
-        if (sortedArray.length === 0) return 0;
-        let nextIndex = Math.floor(sortedArray.length / 2);
-        let nextNumber = sortedArray[nextIndex];
-        if (number > nextNumber) {
-            return nextIndex + 1 + this.getPosition(number, sortedArray.slice(nextIndex + 1));
-        } else {
-            return 0 + this.getPosition(number, sortedArray.slice(0, nextIndex));
-        }
-    }
-
-    //
+    // Get the minimum fixation duration that will be considered a pause
     getMinPauseTime() {
         // Initialise variables
+        const pauseThresholdPercent = 5; // A window's openOffset must be in the highest pauseThresholdPercent% to count as a pause
         let windowCount = 0;
-        let thresholdValues = [];
-        let thresholdValueQuant = this.windowPath.length * (this.pauseThresholdPercent / 100);
-        // Populate thresholdValues with the first values found
-        while (windowCount < thresholdValueQuant) {
+        let largestOffsets = new SortedNumberList();
+        let offsetQuant = this.windowPath.length * (pauseThresholdPercent / 100);
+        // Populate largestOffsets with the first values found
+        while (windowCount < offsetQuant) {
             let nextOffset = this.windowPath[windowCount++].openOffset;
-            let nextPosition = this.getPosition(nextOffset, thresholdValues);
-            thresholdValues.splice(nextPosition, 0, nextOffset);
+            largestOffsets.insert(nextOffset);
         }
-        // Populate thresholdValues with the largest values found
+        // Populate largestOffsets with the largest values found
         while (windowCount < this.windowPath.length) {
             let nextOffset = this.windowPath[windowCount++].openOffset;
-            if (nextOffset > thresholdValues[0]) {
-                thresholdValues.shift(); // Remove the smallest number
-                let nextPosition = this.getPosition(nextOffset, thresholdValues);
-                thresholdValues.splice(nextPosition, 0, nextOffset);
+            if (nextOffset > largestOffsets.getSmallest()) {
+                largestOffsets.removeSmallest();
+                largestOffsets.insert(nextOffset);
             }
         }
-        // Return the minimum value in thresholdValues
-        return thresholdValues[0];
+        // Return the threshold value
+        return thresholdValues.getSmallest();
     }
 
     isIntraLineSingleStepForward(oldWindow, newWindow) {
         return oldWindow.rightmostChar + 1 === newWindow.rightmostChar // The windows are at the start of a line
             || oldWindow.rightmostChar + 2 === newWindow.rightmostChar
-            || oldWindow.leftmostChar + 1 === newWindow.leftmostChar  // The windows are at the end of a line
+            || oldWindow.leftmostChar + 1 === newWindow.leftmostChar // The windows are at the end of a line
             || oldWindow.leftmostChar + 2 === newWindow.leftmostChar;
     }
 
@@ -110,7 +140,7 @@ class WindowToCharPathConvertor {
                 if (charWindow.startOfLine) { // Prioritise left side
                     duration = timeFragment * (charWindow.rightmostChar + 1 - i);
                 } else { // Prioritise right side
-                    duration = timeFragment * (i + 1 - charWindow.rightmostChar);
+                    duration = timeFragment * (i + 1 - charWindow.leftmostChar);
                 }
                 charTimes.push({
                     charIndex: i,
@@ -123,19 +153,18 @@ class WindowToCharPathConvertor {
     }
 
     addWindowToPath(path, curCharTimes, newWindow) {
+        const durationThreshold = 5;
         // Get time values for the chars in newWindow
         let newCharTimes = newWindow === undefined ? [] : this.getCharTimes(newWindow);
-        //
+        // Loop through the current list of fixated chars
         for (let curTime of curCharTimes) {
-            let found = false;
-            for (let newTime of newCharTimes) {
-                if (curTime.charIndex === newTime.charIndex) {
-                    found = true;
-                    newTime.duration += curTime.duration;
-                }
+            if (newWindow !== undefined && curTime.charIndex >= newWindow.leftmostChar && curTime.charIndex <= newWindow.rightmostChar) {
+                // The currently fixated char is in the new window
+                newCharTimes[curTime.charIndex - newWindow.leftmostChar].duration += curTime.duration; // Combine their durations
+            } else if (curTime.duration > durationThreshold) {
+                // The char was passed and fixated for a substantial length of time
+                path.push(curTime);
             }
-            // Add passed chars to the path
-            if (!found) path.push(curTime);
         }
         // Return the updated list of current char times
         return newCharTimes;
@@ -148,47 +177,44 @@ class WindowToCharPathConvertor {
         let prevUncriticalWindow = undefined;
         let curCriticalChars = [];
         let criticalCharPath = [];
-        let windowCount = 0;
         //
-        while (windowCount < this.windowPath.length) {
-            let curWindow = this.windowPath[windowCount++];
+        for (let curWindow of this.windowPath) {
             let accepted = false;
             let startOfLine = false;
-            //
-            if (windowCount === 1) {
-                // This is the first window
+            // Each branch of this if statement corresponds to a different path continuation type
+            if (prevCriticalWindow === undefined) {
+                // The path's start point was found
                 accepted = true;
                 startOfLine = true;
             } else if (prevUncriticalWindow === undefined) {
                 // The current path is not a regression or line-break
                 if (this.isIntraLineSingleStepForward(prevCriticalWindow, curWindow)) {
-                    // This is the current path's expected continuation
+                    // A normal path-continuation (1 character forward) was found
                     curCriticalChars = this.addWindowToPath(criticalCharPath, curCriticalChars, prevCriticalWindow);
                     accepted = true;
                 }
-            } else {
-                // Search for a line-break or regression from prevCriticalWindow
-                if (this.isInterLineSingleStepForward(prevCriticalWindow, curWindow)) {
-                    // A line-break from prevCriticalWindow to curWindow was found
-                    prevCriticalWindow.endOfLine = true;
-                    curCriticalChars = this.addWindowToPath(criticalCharPath, curCriticalChars, prevCriticalWindow);
-                    accepted = true;
-                    startOfLine = true;
-                } else if (this.isIntraLineSingleStepForward(prevUncriticalWindow, curWindow) && prevUncriticalWindow.closeOffset > this.minPauseTime) {
-                    // A regression from prevCriticalWindow to prevUncriticalWindow was found
-                    prevCriticalWindow.endOfLine = true;
-                    curCriticalChars = this.addWindowToPath(criticalCharPath, curCriticalChars, prevCriticalWindow);
-                    prevUncriticalWindow.startOfLine = true;
-                    curCriticalChars = this.addWindowToPath(criticalCharPath, curCriticalChars, prevUncriticalWindow);
-                    accepted = true;
-                }
+            } else if (this.isInterLineSingleStepForward(prevCriticalWindow, curWindow)) {
+                // A line-break from prevCriticalWindow to curWindow was found
+                prevCriticalWindow.endOfLine = true;
+                curCriticalChars = this.addWindowToPath(criticalCharPath, curCriticalChars, prevCriticalWindow);
+                accepted = true;
+                startOfLine = true;
+            } else if (this.isIntraLineSingleStepForward(prevUncriticalWindow, curWindow) && prevUncriticalWindow.closeOffset > this.minPauseTime) {
+                // A regression from prevCriticalWindow to prevUncriticalWindow was found
+                prevCriticalWindow.endOfLine = true;
+                curCriticalChars = this.addWindowToPath(criticalCharPath, curCriticalChars, prevCriticalWindow);
+                prevUncriticalWindow.startOfLine = true;
+                curCriticalChars = this.addWindowToPath(criticalCharPath, curCriticalChars, prevUncriticalWindow);
+                accepted = true;
             }
-            // Update most recently accepted window
+            // Accept or reject the current window
             if (accepted) {
-                prevUncriticalWindow = undefined; // Stop/continue not searching for line-breaks or regressions
-                prevCriticalWindow = Object.assign({}, curWindow); // Shallow copy
+                prevUncriticalWindow = undefined; // Don't search for a line-break or regression on the next pass
+                prevCriticalWindow = Object.assign({}, curWindow); // Update the most recently accepted window (shallow copy)
                 prevCriticalWindow.startOfLine = startOfLine;
                 prevCriticalWindow.endOfLine = false;
+            } else {
+                prevUncriticalWindow = curWindow;
             }
         }
         // Treat prevCriticalWindow as a line end
@@ -201,8 +227,21 @@ class WindowToCharPathConvertor {
 
 }
 
-function getStatistics(charPath) {
-    console.log(charPath);
+class Analyser {
+
+    constructor(charPath) {
+        this.charPath = charPath;
+    }
+
+    getGazeDurations() {
+        let seenCharIndexes = new SortedNumberList();
+        for (char of this.charPath) {
+            if (!seenCharIndexes.contains(char.charIndex)) {
+                seenCharIndexes.insert(char.charIndex);
+            }
+        }
+    }
+
 }
 
 // Request data
