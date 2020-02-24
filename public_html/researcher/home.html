@@ -100,6 +100,8 @@
                         <option value="f">Female</option>
                     </select>
 
+                    <!-- Should add an impairment selector -->
+
                 </div>
 
                 <input type="button" onclick="upload()" value="Upload" />
@@ -143,23 +145,22 @@
                 </div>
                 <div>
                     Average:
-                    <select id="an_average_sel">
+                    <select id="an_average_sel" onchange="analysisManager.updateAnalysis()">
                         <option value="mean">Mean</option>
                         <option value="median">Median</option>
                         <option value="mode">Mode</option>
                     </select>
                 </div>
                 <div>
-                    Graphic:
-                    <select id="an_graphic_sel">
-                        <option value="csv">CSV</option>
-                        <option value="heatmap">Heatmap</option>
-                        <option value="graph">Graph</option>
+                    Token:
+                    <select id="an_token_sel" onchange="analysisManager.updateAnalysis()">
+                        <option value="char">Character</option>
+                        <option value="word">Word</option>
                     </select>
                 </div>
                 <div>
                     Statistic:
-                    <select id="an_statistic_sel">
+                    <select id="an_statistic_sel" onchange="analysisManager.updateAnalysis()">
                         <option value="first_fix">First-Fixation Duration</option>
                         <option value="gaze">Gaze Duration</option>
                         <option value="spill">Spillover Time</option>
@@ -169,57 +170,50 @@
                 </div>
                 <div>
                     Gender:
-                    <select id="an_gender_sel" form="an_reset">
+                    <select id="an_gender_sel"  onchange="analysisManager.updateAnalysis()">
                         <option value="all">All</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
+                        <option value="m">Male</option>
+                        <option value="f">Female</option>
                     </select>
                 </div>
                 <div>
-                    Minimum age: <input id="an_min_age_sel" form="an_reset" type="number" min="0" max="255" value="0" />
-                    Maximum age: <input id="an_max_age_sel" form="an_reset" type="number" min="0" max="255" value="255" />
+                    Reading Impairment:
+                    <select id="an_impairment_sel"  onchange="analysisManager.updateAnalysis()">
+                        <option value="all">All</option>
+                        <option value="y">Only Impaired</option>
+                        <option value="n">Only Non-Impaired</option>
+                    </select>
                 </div>
-                <input type="button" onclick="download()" value="Download" />
+                <div>
+                    Minimum age: <input id="an_min_age_sel" type="number" min="0" max="255" value="0" onchange="analysisManager.updateAnalysis()" />
+                    Maximum age: <input id="an_max_age_sel" type="number" min="0" max="255" value="255" onchange="analysisManager.updateAnalysis()" />
+                </div>
+                <input type="button" onclick="download()" value="Download JSON" />
 
-                <div id="an_graphic"></div>
+                <div id="an_display"></div>
 
             </div>
 
             <div id="comp" hidden>
 
-                <select id="comp_average_sel">
+                <select id="comp_average_sel" onchange="comparisonManager.updateComparison()">
                     <option value="mean">Mean</option>
                     <option value="median">Median</option>
                     <option value="mode">Mode</option>
                 </select>
                 <br>
 
-                <table id="comp_table">
-                    <tr>
-                        <th>Statistic</th>
-                        <th id="comp_title_1"></th>
-                        <th id="comp_title_2"></th>
-                    </tr>
-                    <tr>
-                        <td>Number of Regressions (%)</td>
-                        <td id="comp_fix_1"></td>
-                        <td id="comp_fix_2"></td>
-                    </tr>
-                    <tr>
-                        <td>Gaze Duration (ms)</td>
-                        <td id="comp_gaze_1"></td>
-                        <td id="comp_gaze_2"></td>
-                    </tr>
-                    <tr>
-                        <td>First-Fixation Duration (ms)</td>
-                        <td id="comp_first_fix_1"></td>
-                        <td id="comp_first_fix_2"></td>
-                    </tr>
-                    <tr>
-                        <td>Reading Speed (wpm)</td>
-                        <td id="comp_wpm_1"></td>
-                        <td id="comp_wpm_2"></td>
-                    </tr>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Text</th>
+                            <th>Reading Speed (wpm)</th>
+                            <th>Gaze Duration (ms)</th>
+                            <th>Number of Regressions (%)</th>
+                            <th>Regression Path Duration (ms)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comp_table_body"></tbody>
                 </table>
 
             </div>

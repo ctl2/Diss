@@ -6,7 +6,7 @@ function updateUI(account_type) {
     if (account_type == 'reader') {
         div.appendChild(getNewDobDiv());
         div.appendChild(getNewGenderDiv());
-        div.appendChild(getNewDisabilityDiv());
+        div.appendChild(getNewImpairmentDiv());
     } else {
         div.appendChild(getNewFirstNameDiv());
         div.appendChild(getNewSurnameDiv());
@@ -57,20 +57,20 @@ function getNewGenderDiv() {
     return genDiv;
 }
 
-function getNewDisabilityDiv() {
-    // Create disability elements
-    let disDiv = document.createElement('div');
-    let disText = document.createTextNode('Reading problems due to a disability ');
-    let disInput = document.createElement('input');
+function getNewImpairmentDiv() {
+    // Create impairment elements
+    let impDiv = document.createElement('div');
+    let impText = document.createTextNode('Reading problems due to a disability ');
+    let impInput = document.createElement('input');
     // Set element properties
-    disDiv.classList.add("inputField");
-    disInput.id = "dis";
-    disInput.type = "checkbox";
+    impDiv.classList.add("inputField");
+    impInput.id = "isImpaired";
+    impInput.type = "checkbox";
     // Connect elements
-    disDiv.appendChild(disText);
-    disDiv.appendChild(disInput);
+    impDiv.appendChild(impText);
+    impDiv.appendChild(impInput);
     // Return div
-    return disDiv;
+    return impDiv;
 }
 
 function getNewFirstNameDiv() {

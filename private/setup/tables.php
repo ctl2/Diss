@@ -41,7 +41,7 @@
                 password VARCHAR(10) NOT NULL,
                 dob DATE NOT NULL,
                 gender CHAR NOT NULL,
-                dis BINARY NOT NULL,
+                isImpaired BINARY NOT NULL,
                 PRIMARY KEY (username)
             ) ENGINE=InnoDB
         ";

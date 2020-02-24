@@ -16,10 +16,10 @@
         return $rows->num_rows > 0;
     }
 
-    function createReaderAccount($conn, $username, $password, $dob, $gender, $dis) {
-        $sql = "INSERT INTO Readers (username, password, dob, gender, dis) VALUES (?, ?, ?, ?, ?)";
+    function createReaderAccount($conn, $username, $password, $dob, $gender, $isImpaired) {
+        $sql = "INSERT INTO Readers (username, password, dob, gender, isImpaired) VALUES (?, ?, ?, ?, ?)";
         $typeString = "ssssi";
-        $valueArray = array(&$username, &$password, &$dob, &$gender, &$dis);
+        $valueArray = array(&$username, &$password, &$dob, &$gender, &$isImpaired);
         makeBoundQuery($conn, $sql, $typeString, $valueArray);
     }
 
@@ -42,9 +42,9 @@
 
         $dob = getPostVar("dob");
         $gender = getPostVar("gender");
-        $dis = getPostVar("dis");
+        $isImpaired = getPostVar("isImpaired");
 
-        createReaderAccount($conn, $username, $password, $dob, $gender, $dis);
+        createReaderAccount($conn, $username, $password, $dob, $gender, $isImpaired);
 
     } else {
 
