@@ -26,7 +26,7 @@ function showViewDetailsDiv() {
     showOptionalMetaInfo(genderSpan, versionInfo.targetGender);
     // Make an ajax call for the text
     document.getElementById("view_text").innerText = "LOADING...";
-    postRequest(["title=" + title, "version=" + version], "../../private/researcher/getTextString.php", showText, alert);
+    postRequest(["title=" + title, "version=" + version], "../../private/researcher/getTextString.php", window.alert, showText);
     // Show only the view div
     hideDivs("view");
 }
@@ -41,13 +41,6 @@ function showOptionalMetaInfo(span, value) {
     }
 }
 
-function showText(resultJSON) {
-    let result = JSON.parse(resultJSON);
-    if (!result.success) {
-        if (confirm(result.message + " Would you like to try again?")) {
-            postRequest(["title=" + title, "version=" + version], "../../private/researcher/getTextString.php", showText, alert);
-        }
-    } else {
-        document.getElementById("view_text").innerText = result.message;
-    }
+function showText(text) {
+    document.getElementById("view_text").innerText = text;
 }

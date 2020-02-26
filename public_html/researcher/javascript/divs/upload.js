@@ -25,7 +25,7 @@ function upload() {
         for (let datumName in processor.data) {
             let datum = processor.data[datumName];
             if (datum.isValid === false) {
-                alert(datum.value);
+                window.alert(datum.value);
                 data = undefined;
                 break;
             }
@@ -33,22 +33,18 @@ function upload() {
         }
         if (data !== undefined) {
             let versionEl = document.getElementById("up_ver");
-            data.push("isNew=" + document.getElementById("up_title").disabled != "disabled");
-            postRequest(data, "../../private/researcher/uploadText.php", uploadSuccess, alert);
+            data.push("isNew=" + Number(document.getElementById("up_title").disabled != "disabled"));
+            postRequest(data, "../../private/researcher/uploadText.php", window.alert, uploadSuccess);
         }
     });
+    processor.process();
 }
 
-function uploadSuccess(responseJSON) {
-    let response = JSON.parse(responseJSON);
-    if (response.success) {
-        document.getElementById("up_reset").reset();
-        document.getElementById("up_ver").innerText = "";
-        hideDivs();
-        alert("New text successfully uploaded!");
-    } else {
-        alert(response.message);
-    }
+function uploadSuccess() {
+    document.getElementById("up_reset").reset();
+    document.getElementById("up_ver").innerText = "";
+    hideDivs();
+    window.alert("New text successfully uploaded!");
 }
 
 class InputProcessor {
@@ -66,13 +62,16 @@ class InputProcessor {
     }
 
     process() {
-        this.processTitle();
-        this.processVersion();
-        this.processFile();
-        this.processIsPublic();
-        this.processMinAge();
-        this.processMaxAge();
-        this.processGender();
+        return new Promise(async (resolve) => {
+            this.processTitle();
+            this.processVersion();
+            await this.processFile();
+            this.processIsPublic();
+            this.processMinAge();
+            this.processMaxAge();
+            this.processGender();
+            resolve();
+        });
     }
 
     // Checks for duplicate titles are done on the server side.
@@ -143,7 +142,7 @@ class InputProcessor {
     }
 
     processIsPublic() {
-        this.flag("isPublic", true, this.data["isPublic"].el.checked);
+        this.flag("isPublic", true, Number(this.data["isPublic"].el.checked));
     }
 
     processMinAge() {

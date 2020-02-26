@@ -1,5 +1,5 @@
 // function adapted from https://stackoverflow.com/a/7165616
-function postRequest(data, url, success, failure) {
+function postRequest(data, url, failure, success) {
 
     var req = false;
 
@@ -23,8 +23,16 @@ function postRequest(data, url, success, failure) {
     if (!req) return false;
     req.onreadystatechange = function() {
         if (req.readyState == 4) {
-            return req.status === 200 ?
-                success(req.responseText) : failure(req.status);
+            if (req.status === 200) {
+                let response = JSON.parse(req.responseText);
+                if (response.success) {
+                    success(response.message);
+                } else {
+                    failure(response.message);
+                }
+            } else {
+                failure(req.status);
+            }
         }
     };
 

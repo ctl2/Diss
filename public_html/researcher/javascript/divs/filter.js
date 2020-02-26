@@ -59,7 +59,7 @@ function displayUnselectedTexts(pageNumber) {
             for (let version of unselTexts[title]) {
                 let verOpt = document.createElement("option");
                 verOpt.value = version;
-                verOpt.innerText = "v" + version;
+                verOpt.innerText = version;
                 verSel.appendChild(verOpt);
             }
         }

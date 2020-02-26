@@ -1,19 +1,13 @@
 const textRows = 5; // The amount of texts per page
 
-function setupTextTable(responseJSON) {
-    let response = JSON.parse(responseJSON);
-    if (response.success == false) {
-        alert(response.message);
-    } else {
-        allTexts = JSON.parse(response.message);
-        unselTexts = {};
-        selTexts = [];
-        let textTable = document.getElementById("texts");
-        appendTextRows(textTable);
-        appendNavRow(textTable);
-        document.getElementById("filter_button").click();
-        displaySelectedTexts(1);
-    }
+function setupTextTable(allTexts) {
+    unselTexts = {};
+    selTexts = [];
+    let textTable = document.getElementById("texts");
+    appendTextRows(textTable);
+    appendNavRow(textTable);
+    document.getElementById("filter_button").click();
+    displaySelectedTexts(1);
 }
 
 function appendTextRows(table_el) {
@@ -73,8 +67,9 @@ function appendSelectedTextCell(row_el, index) {
     // Connect
     textCell.appendChild(unselectButton);
     textCell.appendChild(titleSpan);
-    textCell.appendChild(document.createTextNode(" v"));
+    textCell.appendChild(document.createTextNode(" ["));
     textCell.appendChild(verSpan);
+    textCell.appendChild(document.createTextNode("]"));
     row_el.appendChild(textCell);
 }
 
@@ -102,4 +97,4 @@ function appendNavCell(row_el, id) {
     row_el.appendChild(navCell);
 }
 
-postRequest([], "../../private/researcher/getAvailableTexts.php", setupTextTable, alert);
+postRequest([], "../../private/researcher/getAvailableTexts.php", window.alert, setupTextTable);

@@ -22,8 +22,7 @@
         while ($dataRow = $dataRows->fetch_assoc()) {
             // Even using the MYSQLI_OPT_INT_AND_FLOAT_NATIVE option, mysqli returns values of type DECIMAL as strings
             // https://stackoverflow.com/questions/18362598/mysql-decimal-fields-returned-as-strings-in-php
-            $dataRow['openOffset'] = (float) $dataRow['openOffset'];
-            $dataRow['closeOffset'] = (float) $dataRow['closeOffset'];
+            $dataRow['duration'] = (float) $dataRow['duration'];
             array_push($dataArray, $dataRow);
         }
         // Return the result array

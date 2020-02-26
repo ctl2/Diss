@@ -23,11 +23,11 @@
         while ($readerRow = $readerRows->fetch_assoc()) {
             $reader = array(
                 "username" => $readerRow["username"],
-                "age" => (int) date_diff($curDate, date_create($readerRow["dob"])),
+                "age" => (int) date_interval_format(date_diff($curDate, date_create($readerRow["dob"])), "%y"),
                 "gender" => $readerRow["gender"],
                 "isImpaired" => (bool) $readerRow["isImpaired"],
             );
-            array_push($readerArray, $readerRow['reader']);
+            array_push($readerArray, $reader);
         }
         // Return the result array
         return $readerArray;

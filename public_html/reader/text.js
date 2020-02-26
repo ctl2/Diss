@@ -137,29 +137,15 @@ class Session {
             "log=" + JSON.stringify(this.timer.log),
             "availWidth=" + window.screen.availWidth,
             "availHeight=" + window.screen.availHeight
-            ], '../../private/reader/uploadReadingData.php', this.success, alert
+        ], '../../private/reader/uploadReadingData.php', window.alert, this.endSession
         );
     }
 
-    success(responseJSON) {
-        let response = JSON.parse(responseJSON);
-        if (response.success == false) {
-            alert(response.message);
-        }
+    endSession() {
         if (window.confirm("Would you like to read another text?")) {
             startNewSession();
         } else {
             logout();
-        }
-    }
-
-    showReplay(windows, prevChar) {
-        if (prevChar !== undefined) prevChar.onmouseout();
-        if (windows.length > 0) {
-            let curWindow = windows.shift();
-            let curChar = document.getElementById("char_" + (curWindow.leftmostChar + this.windowSizeLeft));
-            curChar.onmouseover();
-            window.setTimeout((windows, curChar) => this.showReplay(windows, curChar), curWindow.closeOffset, windows, curChar);
         }
     }
 
@@ -260,24 +246,15 @@ function start() {
 
 function startNewSession() {
     // Get an unread text and pass it to the startSession function
-    postRequest([], '../../private/reader/getUnreadTextString.php', startSession, alert);
+    postRequest([], '../../private/reader/getUnreadTextString.php', window.alert, startSession);
 }
 
-function startSession(responseJSON) {
-    let response = JSON.parse(responseJSON);
-    if (response.success) {
-        session = new Session(response.message);
-    } else {
-        if (confirm(response.message + " Would you like to retry?")) {
-            startNewSession();
-        } else {
-            redirect("");
-        }
-    }
+function startSession(text) {
+    session = new Session(text);
 }
 
 function logout() {
-    postRequest([], '../../private/lib/logout.php', () => location.href='../login/login.html', alert);
+    postRequest([], '../../private/lib/logout.php', () => location.href='../login/login.html', window.alert);
 }
 
 var session;

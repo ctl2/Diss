@@ -148,7 +148,6 @@
                     <select id="an_average_sel" onchange="analysisManager.updateAnalysis()">
                         <option value="mean">Mean</option>
                         <option value="median">Median</option>
-                        <option value="mode">Mode</option>
                     </select>
                 </div>
                 <div>
@@ -161,11 +160,14 @@
                 <div>
                     Statistic:
                     <select id="an_statistic_sel" onchange="analysisManager.updateAnalysis()">
-                        <option value="first_fix">First-Fixation Duration</option>
+                        <option value="first">First-Fixation Duration</option>
                         <option value="gaze">Gaze Duration</option>
                         <option value="spill">Spillover Time</option>
-                        <option value="reg_in">Regressions In</option>
-                        <option value="reg_out">Regressions Out</option>
+                        <option value="total">Total Reading Time</option>
+                        <option value="reg_in_quant">Regressions In (quantity)</option>
+                        <option value="reg_in_time">Regressions In (time)</option>
+                        <option value="reg_out_quant">Regressions Out (quantity)</option>
+                        <option value="reg_out_time">Regressions Out (time)</option>
                     </select>
                 </div>
                 <div>
