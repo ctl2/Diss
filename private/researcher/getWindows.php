@@ -11,7 +11,7 @@
     function getWindows($conn, $title, $version, $reader) {
         // Get all measurements from the given reading session
         $sql = "
-            SELECT leftmostChar, rightmostChar, openOffset, closeOffset
+            SELECT focalChar, leftmostChar, rightmostChar, duration
             FROM Windows
             WHERE title='$title' AND version='$version' AND reader='$reader'
             ORDER BY sequenceNumber

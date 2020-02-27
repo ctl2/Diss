@@ -205,12 +205,14 @@
                 version VARCHAR(10) NOT NULL,
                 reader VARCHAR(10) NOT NULL,
                 sequenceNumber SMALLINT UNSIGNED NOT NULL,
+                focalChar SMALLINT UNSIGNED NOT NULL, -- The index of the character that was moused over to create this window
                 leftmostChar SMALLINT UNSIGNED NOT NULL,
                 rightmostChar SMALLINT UNSIGNED NOT NULL,
                 duration DECIMAL(7,2) UNSIGNED NOT NULL, -- The number of milliseconds between opening and closing this window
                 -- Maximum duration is 10 seconds with DECIMAL(7,2)
                 PRIMARY KEY (title, version, reader, sequenceNumber),
                 FOREIGN KEY (title, version, reader) references Readings (title, version, reader) ON UPDATE cascade ON DELETE cascade,
+                FOREIGN KEY (title, version, focalChar) references Characters (title, version, sequenceNumber) ON UPDATE cascade ON DELETE cascade,
                 FOREIGN KEY (title, version, leftmostChar) references Characters (title, version, sequenceNumber) ON UPDATE cascade ON DELETE cascade,
                 FOREIGN KEY (title, version, rightmostChar) references Characters (title, version, sequenceNumber) ON UPDATE cascade ON DELETE cascade
             ) ENGINE=InnoDB
