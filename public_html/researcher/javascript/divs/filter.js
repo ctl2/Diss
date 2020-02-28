@@ -1,8 +1,8 @@
 'use strict';
 
 var allTexts;   // holds all text info
-var unselTexts; // holds text=>[ver1, ver2, ...] objects
-var selTexts;   // holds {text, version} objects
+var unselTexts = {}; // holds text=>[ver1, ver2, ...] objects
+var selTexts = [];   // holds {text, version} objects
 
 function showFilterDiv() {
     // Show only the filter div

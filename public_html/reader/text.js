@@ -9,13 +9,12 @@ class Session {
     windowSizeRight = 12;
     timer = new FixationTimer();
 
-    constructor(text) {
+    constructor(text, finishButton) {
         this.text = text;
+        this.finishButton = finishButton;
+        finishButton.disabled = 'disabled';
         this.currentWindow = [];
         this.leftmostUnshownCharIndex = 0;
-        let finishButton = document.getElementById("text_but");
-        // finishButton.disabled = 'disabled';
-        finishButton.onclick = () => this.uploadSession();
         window.addEventListener('resize', () => this.drawCharacters());
         this.drawCharacters();
     }
@@ -49,7 +48,7 @@ class Session {
         }
     }
 
-    getWindowBoundaries(originCharIndex) {
+    getWindow(originCharIndex) {
         // Get origin line element
         let originChar = document.getElementById(this.charIdPrefix + "_" + originCharIndex);
         let originLine = originChar.parentElement.parentElement;
@@ -63,28 +62,31 @@ class Session {
         let endIndex = Math.min(endCharIndex, endLineIndex);
         // Return the boundary points
         return {
+            focalChar: originCharIndex,
             leftmostCharIndex: startIndex,
             rightmostCharIndex: endIndex
         };
     }
 
     openWindow(originCharIndex) {
-        // Get window boundary points
-        let windowBoundaries = this.getWindowBoundaries(originCharIndex);
+        // Get window center and boundary points
+        let window = this.getWindow(originCharIndex);
         // Check that no characters have been skipped
-        if (windowBoundaries.leftmostCharIndex <= this.leftmostUnshownCharIndex) {
+        if (window.leftmostCharIndex <= this.leftmostUnshownCharIndex) {
             // Show characters
-            for (let i = windowBoundaries.leftmostCharIndex; i <= windowBoundaries.rightmostCharIndex; i++) {
+            for (let i = window.leftmostCharIndex; i <= window.rightmostCharIndex; i++) {
                 let charSpan = document.getElementById(this.charIdPrefix + "_" + i);
                 charSpan.innerText = this.text[i];
                 charSpan.classList.add("shown");
                 this.currentWindow.push(i);
             }
             // Update the boundary of seen text
-            this.leftmostUnshownCharIndex = Math.max(this.leftmostUnshownCharIndex, windowBoundaries.rightmostCharIndex + 1);
-            if (this.leftmostUnshownCharIndex === this.text.length) document.getElementById("text_but").removeAttribute("disabled");
+            this.leftmostUnshownCharIndex = Math.max(this.leftmostUnshownCharIndex, window.rightmostCharIndex + 1);
+            if (this.leftmostUnshownCharIndex === this.text.length) {
+                this.finishButton.removeAttribute("disabled");
+            }
             // Start timing the window fixation
-            this.timer.recordFixationStart(windowBoundaries);
+            this.timer.recordFixationStart(window);
         }
     }
 
@@ -131,24 +133,6 @@ class Session {
         }
     }
 
-    uploadSession() {
-        this.timer.endTimer();
-        postRequest([
-            "log=" + JSON.stringify(this.timer.log),
-            "availWidth=" + window.screen.availWidth,
-            "availHeight=" + window.screen.availHeight
-        ], '../../private/reader/uploadReadingData.php', window.alert, this.endSession
-        );
-    }
-
-    endSession() {
-        if (window.confirm("Would you like to read another text?")) {
-            startNewSession();
-        } else {
-            logout();
-        }
-    }
-
 }
 
 class FixationTimer {
@@ -159,20 +143,19 @@ class FixationTimer {
         window.performance.mark("end");
     }
 
-    recordFixationStart(windowBoundaries) {
+    recordFixationStart(newWindow) {
         window.performance.mark("start");
         this.log.push({
-            leftmostChar: windowBoundaries.leftmostCharIndex,
-            rightmostChar: windowBoundaries.rightmostCharIndex,
-            openOffset: window.performance.measure("", "end", "start").duration
+            focalChar: newWindow.focalChar,
+            leftmostChar: newWindow.leftmostCharIndex,
+            rightmostChar: newWindow.rightmostCharIndex
         });
-        window.performance.clearMeasures("");
         window.performance.clearMarks("end");
     }
 
     recordFixationEnd() {
         window.performance.mark("end");
-        this.log[this.log.length - 1].closeOffset = window.performance.measure("", "start", "end").duration;
+        this.log[this.log.length - 1].duration = window.performance.measure("", "start", "end").duration;
         window.performance.clearMeasures("");
         window.performance.clearMarks("start");
     }
@@ -235,28 +218,61 @@ class MediaChecker {
 
 }
 
-function start() {
-    let mediaChecker = new MediaChecker();
-    if (!mediaChecker.isAcceptable()) {
-        mediaChecker.displayError();
-    } else {
-        startNewSession();
+class SessionManager {
+
+    constructor() {
+        this.finishButton = document.getElementById("text_but");
+        this.finishButton.onclick = () => this.uploadSession();
+        let mediaChecker = new MediaChecker();
+        if (!mediaChecker.isAcceptable()) {
+            mediaChecker.displayError();
+        } else {
+            this.startNewSession();
+        }
     }
+
+    startSession(text) {
+        this.session = new Session(text, this.finishButton);
+    }
+
+    startNewSession() {
+        // Get an unread text and pass it to the startSession function
+        postRequest(
+            [],
+            '../../private/reader/getUnreadTextString.php',
+            (message) => {
+                window.alert(message);
+                this.logout();
+            },
+            (text) => this.startSession(text));
+    }
+
+    uploadSession() {
+        this.session.timer.endTimer();
+        postRequest(
+            [
+                "log=" + JSON.stringify(this.session.timer.log),
+                "availWidth=" + window.screen.availWidth,
+                "availHeight=" + window.screen.availHeight
+            ],
+            '../../private/reader/uploadReadingData.php',
+            window.alert,
+            () => this.endSession()
+        );
+    }
+
+    endSession() {
+        if (window.confirm("Would you like to read another text?")) {
+            this.startNewSession();
+        } else {
+            this.logout();
+        }
+    }
+
+    logout() {
+        postRequest([], '../../private/lib/logout.php', () => location.href='../login/login.html', window.alert);
+    }
+
 }
 
-function startNewSession() {
-    // Get an unread text and pass it to the startSession function
-    postRequest([], '../../private/reader/getUnreadTextString.php', window.alert, startSession);
-}
-
-function startSession(text) {
-    session = new Session(text);
-}
-
-function logout() {
-    postRequest([], '../../private/lib/logout.php', () => location.href='../login/login.html', window.alert);
-}
-
-var session;
-
-start();
+var sessionManager = new SessionManager();

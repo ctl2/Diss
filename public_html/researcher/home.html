@@ -145,34 +145,34 @@
                 </div>
                 <div>
                     Average:
-                    <select id="an_average_sel" onchange="analysisManager.updateAnalysis()">
+                    <select id="an_average_sel" onchange="readingManager.updateDisplay()">
                         <option value="mean">Mean</option>
                         <option value="median">Median</option>
                     </select>
                 </div>
                 <div>
                     Token:
-                    <select id="an_token_sel" onchange="analysisManager.updateAnalysis()">
+                    <select id="an_token_sel" onchange="readingManager.updateDisplay()">
                         <option value="char">Character</option>
                         <option value="word">Word</option>
                     </select>
                 </div>
                 <div>
                     Statistic:
-                    <select id="an_statistic_sel" onchange="analysisManager.updateAnalysis()">
-                        <option value="first">First-Fixation Duration</option>
-                        <option value="gaze">Gaze Duration</option>
-                        <option value="spill">Spillover Time</option>
-                        <option value="total">Total Reading Time</option>
-                        <option value="reg_in_quant">Regressions In (quantity)</option>
-                        <option value="reg_in_time">Regressions In (time)</option>
-                        <option value="reg_out_quant">Regressions Out (quantity)</option>
-                        <option value="reg_out_time">Regressions Out (time)</option>
+                    <select id="an_statistic_sel" onchange="readingManager.updateDisplay()">
+                        <option value="firstFixationDuration">First-Fixation Duration</option>
+                        <option value="gazeDuration">Gaze Duration</option>
+                        <option value="spilloverTime">Spillover Time</option>
+                        <option value="totalReadingTime">Total Reading Time</option>
+                        <option value="regressionsInCount">Regressions In (quantity)</option>
+                        <option value="regressionsInTime">Regressions In (time)</option>
+                        <option value="regressionsOutCount">Regressions Out (quantity)</option>
+                        <option value="regressionsOutTime">Regressions Out (time)</option>
                     </select>
                 </div>
                 <div>
                     Gender:
-                    <select id="an_gender_sel"  onchange="analysisManager.updateAnalysis()">
+                    <select id="an_gender_sel"  onchange="readingManager.updateDisplay()">
                         <option value="all">All</option>
                         <option value="m">Male</option>
                         <option value="f">Female</option>
@@ -180,17 +180,19 @@
                 </div>
                 <div>
                     Reading Impairment:
-                    <select id="an_impairment_sel"  onchange="analysisManager.updateAnalysis()">
+                    <select id="an_impairment_sel"  onchange="readingManager.updateDisplay()">
                         <option value="all">All</option>
                         <option value="y">Only Impaired</option>
                         <option value="n">Only Non-Impaired</option>
                     </select>
                 </div>
                 <div>
-                    Minimum age: <input id="an_min_age_sel" type="number" min="0" max="255" value="0" onchange="analysisManager.updateAnalysis()" />
-                    Maximum age: <input id="an_max_age_sel" type="number" min="0" max="255" value="255" onchange="analysisManager.updateAnalysis()" />
+                    Minimum age: <input id="an_min_age_sel" type="number" min="0" max="255" value="0" onchange="readingManager.updateDisplay()" />
+                    Maximum age: <input id="an_max_age_sel" type="number" min="0" max="255" value="255" onchange="readingManager.updateDisplay()" />
                 </div>
                 <input type="button" onclick="download()" value="Download JSON" />
+
+                <br><br>
 
                 <div id="an_display"></div>
 

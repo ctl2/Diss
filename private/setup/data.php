@@ -1,12 +1,19 @@
 <?php
 
     error_reporting(E_ALL);
+    ini_set('display_errors', 1);
 
     require ("../lib/connectDB.php");
 
-    function addToReviewer($conn, $username, $password, $email, $name) {
-        $sql = $conn->prepare("INSERT INTO Reviewers(username, password, email, name) VALUES (?, ?, ?, ?)");
-        $sql->bind_param("ssss", $username, $password, $email, $name);
+    function addReader($conn, $username, $password, $dob, $gender, $isImpaired) {
+        $sql = $conn->prepare("INSERT INTO Readers(username, password, dob, gender, isImpaired) VALUES (?, ?, ?, ?, ?)");
+        $sql->bind_param("ssssi", $username, $password, $dob, $gender, $isImpaired);
+        add($conn, "Readers", $sql);
+    }
+
+    function addResearcher($conn, $username, $password) {
+        $sql = $conn->prepare("INSERT INTO Researchers(username, password) VALUES (?, ?)");
+        $sql->bind_param("ss", $username, $password);
         add($conn, "Reviewers", $sql);
     }
 
@@ -36,7 +43,21 @@
 
     $conn = connectDB();
 
-    addToReviewer($conn, "reviewer", "reviewer", "ctl2@hw.ac.uk", "Callum Latham");
+    for ($i = 0; $i < 100; $i++) {
+        addResearcher($conn, "reviewer" . $i, "reviewer" . $i);
+    }
+
+    for ($i = 0; $i < 100; $i++) {
+        $dob = rand(1900, 2019) . "-01-01";
+        if (rand(0,1) === 0) {
+            $gender = "m";
+        } else {
+            $gender = "f";
+        }
+        $isImpaired = rand(0,1);
+        addReader($conn, "reader" . $i, "reader" . $i, $dob, $gender, $isImpaired);
+    }
+
 
     // $texts = getFileNamesContents("./texts");
     // foreach($texts as $title => $text) {

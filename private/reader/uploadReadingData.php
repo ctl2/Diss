@@ -21,19 +21,19 @@
     function createLogEntry($conn, $title, $version, $reader, $log) {
         // Get a bound query for a single insert into the Windows table
         $sql = "
-            INSERT INTO Windows (title, version, reader, sequenceNumber, leftmostChar, rightmostChar, openOffset, closeOffset)
+            INSERT INTO Windows (title, version, reader, sequenceNumber, focalChar, leftmostChar, rightmostChar, duration)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ";
-        $typeString = "sssiiidd";
-        $valueArray = array(&$title, &$version, &$reader, &$sequenceNumber, &$leftmostChar, &$rightmostChar, &$openOffset, &$closeOffset);
+        $typeString = "sssiiiid";
+        $valueArray = array(&$title, &$version, &$reader, &$sequenceNumber, &$focalChar, &$leftmostChar, &$rightmostChar, &$duration);
         $binding = getBoundQuery($conn, $sql, $typeString, $valueArray);
         // Execute the bound query once for each set of values in the $log array
         for ($sequenceNumber = 0; $sequenceNumber < count($log); $sequenceNumber++) {
             $logEntry = $log[$sequenceNumber];
+            $focalChar = $logEntry['focalChar'];
             $leftmostChar = $logEntry['leftmostChar'];
             $rightmostChar = $logEntry['rightmostChar'];
-            $openOffset = $logEntry['openOffset'];
-            $closeOffset = $logEntry['closeOffset'];
+            $duration = $logEntry['duration'];
             executeBoundQuery($conn, $binding);
         }
     }
