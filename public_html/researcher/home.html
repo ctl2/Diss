@@ -8,9 +8,19 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
         <style>
+
             #top {
                 padding-bottom: 20px;
             }
+
+            #an_display {
+                width: 800px;
+            }
+
+            .character {
+                border-width: 4px;
+            }
+
         </style>
 
         <script type="text/javascript" src="../lib/ajax.js"></script>
@@ -204,6 +214,7 @@
                     <option value="mean">Mean</option>
                     <option value="median">Median</option>
                 </select>
+                <input type="checkbox" onclick="">
                 <br>
 
                 <table>
@@ -214,6 +225,12 @@
                             <th>Gaze Duration (ms)</th>
                             <th>Number of Regressions (%)</th>
                             <th>Regression Path Duration (ms)</th>
+                            <!--
+                                give different views: graphs, heatmaps, tables
+                                maybe link these via mousehover, etc.
+                                also give standard deviation, etc.
+                                Comparisons by demographic is also useful
+                             -->
                         </tr>
                     </thead>
                     <tbody id="comp_table_body"></tbody>

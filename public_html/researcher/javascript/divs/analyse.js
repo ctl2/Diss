@@ -33,12 +33,14 @@ function showAnalyseDiv() {
     hideDivs("an");
 }
 
-class SortedNumberList {
+class SortedNumberList extends Array {
 
-    list = [];
+    constructor() {
+        super();
+    }
 
     // O(log(n)) complexity search algorithm
-    getIndex(number, list = this.list) {
+    getIndex(number, list = this) {
         if (list.length === 0) return 0;
         let nextIndex = Math.floor(list.length / 2);
         let nextNumber = list[nextIndex];
@@ -53,13 +55,13 @@ class SortedNumberList {
 
     insert(number) {
         let index = this.getIndex(number);
-        this.list.splice(index, 0, number);
+        this.splice(index, 0, number);
     }
 
     remove(number) {
         let index = this.getIndex(number);
-        if (this.list[index] === number) {
-            this.list.splice(index, 1);
+        if (this[index] === number) {
+            this.splice(index, 1);
             return true;
         }
         return false;
@@ -67,16 +69,32 @@ class SortedNumberList {
 
     contains(number) {
         let index = this.getIndex(number);
-        if (this.list[index] === number) return true;
+        if (this[index] === number) return true;
         return false;
     }
 
     removeSmallest() {
-        return this.list.shift();
+        return this.shift();
     }
 
     getSmallest() {
-        return this.list[0];
+        return this[0];
+    }
+
+    getSum() {
+        return this.reduce(
+            (total, curNumber) => total + curNumber
+        );
+    }
+
+    getMedian() {
+        return this[Math.floor(this.length / 2)];
+    }
+
+    getMean() {
+        return (this.length === 0)?
+            0:
+            this.getSum() / (this.length);
     }
 
 }
@@ -110,7 +128,7 @@ class Reader {
 
 class Fixation {
 
-    durationThreshold = 5; // Minimum gaze duration required for an analysis object to be considered
+    durationThreshold = 8; // Minimum gaze duration required for an analysis object to be considered
 
     constructor(charIndex, firstFixationDuration, gazeDuration) {
         this.charIndex = charIndex;
@@ -122,8 +140,9 @@ class Fixation {
         this.gazeDuration += fixation.gazeDuration;
     }
 
-    endFixation(spilloverTime) {
-        this.spilloverTime = spilloverTime;
+    // The argument is the first window that doesn't include this character after its initial fixation
+    endFixation(spilloverWindow) {
+        this.spilloverTime = spilloverWindow.firstFixationDuration;
     }
 
     isSubstantial() {
@@ -151,6 +170,10 @@ class Window {
         }
     }
 
+    isSmallerThan(window) {
+        return (this.rightmostChar - this.leftmostChar) < (window.rightmostChar - window.leftmostChar);
+    }
+
     isBefore(window) {
         return this.rightmostChar < window.rightmostChar // The windows are at the start of a line
             || this.leftmostChar < window.leftmostChar; // The windows are at the end of a line
@@ -165,27 +188,37 @@ class Window {
 
     getFixations() {
         // Initialise variables
-        let fixations = [];
         let windowLength = 1 + this.rightmostChar - this.leftmostChar;
+        let fixations = [];
         let firstFixationDuration;
         //
-        if (this.isPathStart === this.isPathEnd) { // Spread time across all characters evenly
-            firstFixationDuration = this.duration / windowLength;
-            for (let i = this.leftmostChar; i <= this.rightmostChar; i++) {
-                let newFixation = new Fixation(i, firstFixationDuration, firstFixationDuration);
-                fixations.push(newFixation);
+        if (windowLength > 0) {
+            //
+            if (this.isPathStart === this.isPathEnd) { // Spread time across all characters evenly
+                firstFixationDuration = this.duration / windowLength;
+                for (let i = this.leftmostChar; i <= this.rightmostChar; i++) {
+                    let newFixation = new Fixation(i, firstFixationDuration, firstFixationDuration);
+                    fixations.push(newFixation);
+                }
+            } else { // Prioritise left or right-side characters in time allocation
+                // gazeDuration = window.duration / (windowLength + (windowLength-1) + ... + 1)
+                firstFixationDuration = this.duration / (((windowLength * windowLength) + windowLength) / 2);
+                for (let i = this.leftmostChar; i <= this.rightmostChar; i++) {
+                    let gazeDuration =
+                        this.isPathStart?
+                        firstFixationDuration * (this.rightmostChar + 1 - i): // Prioritise left side
+                        firstFixationDuration * (i + 1 - this.leftmostChar); // Prioritise right side
+                     // The first fixation on a line tends to be longer than other fixations due to a lack of preprocessing
+                     // K Rayner, 1977, Visual attention in reading: Eye movements reflect cognitive processes
+                    if (this.isPathStart) gazeDuration *= 0.7;
+                    let newFixation = new Fixation(i, firstFixationDuration, gazeDuration);
+                    fixations.push(newFixation);
+                }
             }
-        } else { // Prioritise left or right-side characters in time allocation
-            // gazeDuration = window.duration / (windowLength + (windowLength-1) + ... + 1)
-            firstFixationDuration = this.duration / (((windowLength * windowLength) + windowLength) / 2);
-            for (let i = this.leftmostChar; i <= this.rightmostChar; i++) {
-                let gazeDuration = this.isPathStart ?
-                    firstFixationDuration * (this.rightmostChar + 1 - i): // Prioritise left side
-                    firstFixationDuration * (i + 1 - this.leftmostChar); // Prioritise right side
-                let newFixation = new Fixation(i, firstFixationDuration, gazeDuration);
-                fixations.push(newFixation);
-            }
+            if (this.isPathStart) fixations[0].isPathStart = true;
+            if (this.isPathEnd) fixations[windowLength-1].isPathEnd = true;
         }
+        //
         return {
             fixations: fixations,
             firstFixationDuration: firstFixationDuration
@@ -198,16 +231,13 @@ class Window {
 
 }
 
-class WindowPath {
+class WindowPath extends Array {
 
     constructor(windows) {
-        this.path = windows.map(
-            (window) => new Window(window)
-        );
-    }
-
-    getLength() {
-        return this.path.length;
+        super();
+        for (let window of windows) {
+            this.push(new Window(window));
+        }
     }
 
     // Get the minimum gaze duration that will be considered a pause
@@ -216,14 +246,14 @@ class WindowPath {
         const pauseThresholdPercent = 5; // A window's openOffset must be in the highest pauseThresholdPercent% to count as a pause
         let windowCount = 0;
         let largestOffsets = new SortedNumberList();
-        let offsetQuant = this.getLength() * (pauseThresholdPercent / 100);
+        let offsetQuant = this.length * (pauseThresholdPercent / 100);
         // Populate largestOffsets with the first values found
         while (windowCount < offsetQuant) {
             let nextOffset = this.getWindow(windowCount++).duration;
             largestOffsets.insert(nextOffset);
         }
         // Populate largestOffsets with the largest values found
-        while (windowCount < this.getLength()) {
+        while (windowCount < this.length) {
             let nextOffset = this.getWindow(windowCount++).duration;
             if (nextOffset > largestOffsets.getSmallest()) {
                 largestOffsets.removeSmallest();
@@ -231,13 +261,13 @@ class WindowPath {
             }
         }
         // Return the threshold value
-        return largestOffsets.getSmallest();
+        return largestOffsets.getMean();
     }
 
     getWindow(pathIndex) {
-        return pathIndex < 0 ?
+        return (pathIndex < 0)?
             new Window():
-            this.path[pathIndex];
+            this[pathIndex];
     }
 
 }
@@ -267,6 +297,10 @@ class Character {
     regressionsOut = [];
     regressionsIn = [];
 
+    constructor(isLineStart) {
+        this.isLineStart = isLineStart
+    }
+
 }
 
 class Reading {
@@ -276,8 +310,23 @@ class Reading {
     constructor(text, reader, windowPath) {
         // Initialise fields
         this.reader = new Reader(reader);
+
+        // Get line end info
+        let lineStartIndexes = new SortedNumberList();
+        let curWindow = windowPath[windowPath.length - 1];
+        let foundLineEnd = false;
+        // Search the path
+        for (let nextWindow of windowPath) {
+            if (curWindow.isSmallerThan(nextWindow) && curWindow.leftmostChar  === nextWindow.leftmostChar) {
+                lineStartIndexes.insert(curWindow.leftmostChar);
+            }
+            curWindow = nextWindow;
+        }
+
+        // Make character objects
         for (let i = 0; i < text.length; i++) {
-            this.characters[i] = new Character();
+            let isLineStart = lineStartIndexes.contains(i);
+            this.characters[i] = new Character(isLineStart);
         }
 
         // Declare construction helper functions
@@ -291,7 +340,7 @@ class Reading {
                 if (!newWindow.contains(charIndex)) {
                     let charFixations = this.characters[charIndex].fixations;
                     let currentFixation = charFixations[charFixations.length-1];
-                    currentFixation.spilloverTime = newFixations.firstFixationDuration;
+                    currentFixation.endFixation(newFixations);
                 }
             }
             // Handle unmasked chars
@@ -302,7 +351,6 @@ class Reading {
                     currentFixation.extendFixation(newFixation);
                 } else {
                     // Make a new analysis object for newly unmasked chars
-                    newFixation.endFixation();
                     charFixations.push(newFixation);
                 }
             }
@@ -318,14 +366,14 @@ class Reading {
         let unpassedRegressions = [];
         let leftmostUnfixatedCharIndex = 0;
         // Perform analysis
-        for (let i = 1; i < windowPath.getLength(); i++) {
+        for (let i = 1; i < windowPath.length; i++) {
             let currentWasAccepted = false;
             currentWindows.next = windowPath.getWindow(i);
             if (currentWindows.previous.isPathEnd) {
                 if (
-                    currentWindows.current.contains(leftmostUnfixatedCharIndex) ||
+                    currentWindows.current.isImmediatelyBefore(currentWindows.next) &&
                     (
-                        currentWindows.current.isImmediatelyBefore(currentWindows.next) &&
+                        currentWindows.current.contains(leftmostUnfixatedCharIndex) ||
                         currentWindows.current.duration > minPauseTime
                     )
                 ) {
@@ -343,7 +391,7 @@ class Reading {
                 }
             } else {
                 currentWasAccepted = true;
-                if (!currentWindows.current.isImmediatelyBefore(currentWindows.next)) {
+                if (!currentWindows.current.isImmediatelyBefore(currentWindows.next) || currentWindows.next.duration < 8) {
                     currentWindows.current.isPathEnd = true;
                 }
             }
@@ -361,11 +409,11 @@ class Reading {
                     regression.addToPath(currentWindows.current);
                     if (regression.startedBefore(currentWindows.next)) {
                         this.characters[regression.origin].regressionsOut.push({
-                            destination: regression.destination,
+                            other: regression.destination,
                             pathDuration: regression.pathDuration
                         });
                         this.characters[regression.destination].regressionsIn.push({
-                            origin: regression.origin,
+                            other: regression.origin,
                             pathDuration: regression.pathDuration
                         });
                         unpassedRegressions.splice(i, 1);
@@ -390,8 +438,14 @@ class Reading {
 
 class TokenAnalysis {
 
+    charLength = 1;
+    regressionInOrigins = {};
+    regressionOutDestinations = {};
+
     constructor(character = new Character()) {
         if (character.fixations.length === 0) {
+            this.isLineStart = NaN;
+            this.isLineStart = NaN;
             this.firstFixationDuration = NaN;
             this.gazeDuration = NaN;
             this.spilloverTime = NaN;
@@ -401,15 +455,18 @@ class TokenAnalysis {
             this.regressionsOutCount = NaN;
             this.regressionsOutTime = NaN;
         } else {
-            // Get the first substantial fixation of this character
-            // Default to the first fixation
-            let firstFixation = character.fixations.reduceRight(
-                (firstFixation, character) =>
-                    character.isSubstantial()?
-                    character:
-                    firstFixation
-                , character.fixations[0]
-            );
+            // Helper function
+            let addRegressions = (regressions, statistic) => {
+                for (let regression of regressions) {
+                    this.addNewRegressionObject(statistic, regression.other);
+                    this[statistic][regression.other].count++;
+                    this[statistic][regression.other].duration += regression.pathDuration;
+                }
+            };
+            // Get the first fixation of this character
+            let firstFixation = character.fixations[0]
+            // Set fields
+            this.isLineStart = character.isLineStart;
             this.firstFixationDuration = firstFixation.firstFixationDuration; // First fixation's first-fixation time
             this.gazeDuration = firstFixation.gazeDuration; // First fixation's gaze duration
             this.spilloverTime = firstFixation.spilloverTime; // First fixation's spillover time
@@ -422,97 +479,141 @@ class TokenAnalysis {
                 (regressionsInTime, nextRegression) => regressionsInTime + nextRegression.pathDuration,
                 0
             ); // Total path time of of all regessions in
+            addRegressions(character.regressionsIn, "regressionInOrigins");
             this.regressionsOutCount = character.regressionsOut.length; // Total regressions out
             this.regressionsOutTime = character.regressionsOut.reduce(
                 (regressionsOutTime, nextRegression) => regressionsOutTime + nextRegression.pathDuration,
                 0
             ); // Total path time of of all regessions out
+            addRegressions(character.regressionsOut, "regressionOutDestinations");
         }
+    }
+
+    addNewRegressionObject(statistic, key) {
+        if (!this[statistic].hasOwnProperty(key)) {
+            this[statistic][key] = {
+                count: 0,
+                duration: 0
+            };
+        }
+    }
+
+    mergeRegressions(statistic, newToken) {
+        for (let key in newToken[statistic]) {
+            this.addNewRegressionObject(statistic, key);
+            this[statistic][key].count++;
+            this[statistic][key].duration += newToken[statistic][key].duration;
+        }
+    }
+
+    setNewAverage(statistic, newToken) {
+        this[statistic] += (newToken[statistic] - this[statistic]) / this.charLength
     }
 
     addCharacter(character) {
+        this.charLength++;
         let characterAnalysis = new TokenAnalysis(character);
-        // First fixation duration is not affected
-        // Spillover time is set to the new rightmost character's
+        // First fixation duration is that of the new leftmost character
+        // Spillover time is that of the new rightmost character
         this.spilloverTime = characterAnalysis.spilloverTime;
-        // Everything else is added to the current total
-        this.gazeDuration += characterAnalysis.gazeDuration;
-        this.totalReadingTime += characterAnalysis.totalReadingTime;
-        this.regressionsInCount += characterAnalysis.regressionsInCount;
-        this.regressionsInTime += characterAnalysis.regressionsInTime;
-        this.regressionsOutCount += characterAnalysis.regressionsOutCount;
-        this.regressionsOutTime += characterAnalysis.regressionsOutTime;
+        // Regression path data is summed
+        this.mergeRegressions("regressionInOrigins", characterAnalysis);
+        this.mergeRegressions("regressionOutDestinations", characterAnalysis);
+        // Everything else uses the mean of all character values
+        // This prevents longer words from having inherently higher gaze durations, etc.
+        this.setNewAverage("gazeDuration", characterAnalysis);
+        this.setNewAverage("totalReadingTime", characterAnalysis);
+        this.setNewAverage("regressionsInCount", characterAnalysis);
+        this.setNewAverage("regressionsInTime", characterAnalysis);
+        this.setNewAverage("regressionsOutCount", characterAnalysis);
+        this.setNewAverage("regressionsOutTime", characterAnalysis);
+    }
+
+    getAnalyses() {
+        let analyses = [this]; // First character may be a line start
+        let analysisCopy = {
+            ...this,
+            isLineStart: false
+        }; // Latter characters may not
+        for (let i = 1; i < this.charLength; i++) {
+            analyses.push(analysisCopy);
+        }
+        return analyses;
     }
 
 }
 
-class TextAnalyses {
-
-    analyses = [];
+class TokenAnalyses extends Array {
 
     constructor(readings, text, token) {
+        super();
         // Initialise variables
         let totalReadings = readings.length;
-        // Get token list
-        switch (token) {
-            case "char":
-                // Analyse by char
-                for (let i = 0; i < totalReadings; i++) {
-                    this.analyses.push(
-                        readings[i].characters.map(
-                            (character) => new TokenAnalysis(character)
-                        )
+        // Check for no readings
+        if (totalReadings === 0) {
+            this[0] = text.split("").map(
+                (character) => new TokenAnalysis()
+            );
+        } else {
+            // Get token list
+            switch (token) {
+                case "char":
+                    // Analyse by char
+                    for (let i = 0; i < totalReadings; i++) {
+                        this.push(
+                            readings[i].characters.map(
+                                (character) => new TokenAnalysis(character)
+                            )
+                        );
+                    }
+                    break;
+                case "word":
+                    // Analyse by word
+                    let totalCharacters = text.length;
+                    let isWord = text.split("").map(
+                        (character) => /\w/.test(character)
                     );
-                }
-                break;
-            case "word":
-                // Analyse by word
-                let totalCharacters = text.length;
-                let isWord = text.split("").map(
-                    (character) => /\w/.test(character)
-                );
-                for (let i = 0; i < totalReadings; i++) {
-                    this.analyses[i] = [];
-                    let curReading = readings[i];
-                    let curAnalysis;
-                    for (let j = 0; j < totalCharacters; j++) {
-                        if (isWord[j]) {
-                            if (curAnalysis === undefined) {
-                                curAnalysis = new TokenAnalysis(curReading.characters[j]);
-                            } else {
-                                curAnalysis.addCharacter(curReading.characters[j]);
-                            }
-                            if (j === totalCharacters - 1) this.analyses[i].push(curAnalysis);
-                        } else {
-                            if (curAnalysis !== undefined) {
-                                for (let k = j - 1; isWord[k]; k--) {
-                                    this.analyses[i].push(curAnalysis);
+                    for (let i = 0; i < totalReadings; i++) {
+                        this[i] = [];
+                        let curReading = readings[i];
+                        let curAnalysis;
+                        for (let j = 0; j < totalCharacters; j++) {
+                            if (isWord[j]) {
+                                if (curAnalysis === undefined) {
+                                    curAnalysis = new TokenAnalysis(curReading.characters[j]);
+                                } else {
+                                    curAnalysis.addCharacter(curReading.characters[j]);
                                 }
-                                curAnalysis = undefined;
+                                if (j === totalCharacters - 1) this[i].push(curAnalysis);
+                            } else {
+                                if (curAnalysis !== undefined) {
+                                    let curAnalyses = curAnalysis.getAnalyses();
+                                    this[i].push(...curAnalyses);
+                                    curAnalysis = undefined;
+                                }
+                                this[i].push(new TokenAnalysis());
                             }
-                            this.analyses[i].push(new TokenAnalysis());
                         }
                     }
-                }
-                break;
-            default:
-                window.alert("Unrecognised token type: " + token);
+                    break;
+                default:
+                    window.alert("Unrecognised token type: " + token);
+            }
         }
     }
 
 }
 
-class AveragedTextAnalysis {
-
-    averages = [];
+class AveragedTextAnalysis extends Array {
 
     constructor(analyses, average, statistic) {
+        super();
         // Declare variables
         let totalReadings = analyses.length;
         let totalCharacters = analyses[0].length;
         // Initialise characters
         for (let i = 0; i < totalCharacters; i++) {
-            this.averages[i] = 0;
+            this[i] = 0;
         }
         // Set averages
         switch (average) {
@@ -521,11 +622,22 @@ class AveragedTextAnalysis {
                     let nextAnalysis = analyses[i];
                     // Set new averages
                     for (let j = 0; j < totalCharacters; j++) {
-                        this.averages[j] += ((nextAnalysis[j][statistic] - this.averages[j]) / (i + 1));
+                        this[j] +=
+                            (Number(nextAnalysis[j][statistic]) - // Convert booleans to binary integers
+                            this[j]) / (i + 1);
                     }
                 }
                 break;
             case "median":
+                for (let i = 0; i < totalCharacters; i++) {
+                    let sortedValues = new SortedNumberList();
+                    for (let j = 0; j < totalReadings; j++) {
+                        sortedValues.insert(
+                            Number(analyses[j][i][statistic])  // Convert booleans to binary integers
+                        );
+                    }
+                    this[i] = sortedValues.getMedian();
+                }
                 break;
             default:
                 window.alert("Unrecognised average type: " + average);
@@ -534,16 +646,15 @@ class AveragedTextAnalysis {
 
 }
 
-class ColourAnalysis {
+class RatioList extends Array {
 
-    constructor(numbers) {
-        // Define variables
-        const minHue = 0; // Red
-        const maxHue = 120; // Green
+    constructor(numbers, min, max, reverse) {
+        super();
         // Get maximum and minimum numbers
         let maxNumber = numbers[0];
         let minNumber = numbers[0];
-        for (let i = 1; i < numbers.length; i++) {
+        let totalNumbers = numbers.length;
+        for (let i = 1; i < totalNumbers; i++) {
             let nextNumber = numbers[i];
             if (nextNumber < minNumber) {
                 minNumber = nextNumber;
@@ -551,39 +662,23 @@ class ColourAnalysis {
                 maxNumber = nextNumber;
             }
         }
-        // Convert numbers to hues
+        // Convert numbers to ratios
         let numberRange = maxNumber - minNumber;
-        let percentageDividor = numberRange / 100;
-        this.hues = numbers.map(
-            (number) => (maxNumber - number) / percentageDividor
-        );
-    }
-
-}
-
-class CharacterDisplayer {
-
-    saturation = 100;
-    lightness = 50;
-    alpha = 0.6;
-
-    constructor(parentElement, character) {
-        this.element = document.createElement("span");
-        this.element.innerText = character;
-        parentElement.appendChild(this.element);
-    }
-
-    setHue(hue) {
-        if (Number.isNaN(hue)) {
-            this.alpha = 0;
-            hue = 0;
+        if (numberRange === 0) {
+            // Avoid divides by zero
+            for (let i = 0; i < totalNumbers; i++) {
+                this.push(max);
+            }
         } else {
-            this.alpha = 0.6;
+            let multiplier = (max - min) / numberRange;
+            let getMultiplicand =
+                reverse?
+                (number) => maxNumber - number:
+                (number) => number - minNumber;
+            for (let number of numbers) {
+                this.push(multiplier * getMultiplicand(number) + min);
+            }
         }
-        this.element.style.setProperty(
-            "background-color",
-            "hsla(" + hue + "," + this.saturation + "%," + this.lightness + "%," + this.alpha + ")"
-        );
     }
 
 }
@@ -591,66 +686,150 @@ class CharacterDisplayer {
 class AnalysesDisplayer {
 
     constructor(readings, text, filters, statistic, token, average, displayers) {
-        this.readings = readings;
-        this.text = text;
-        this.filters = filters;
-        this.statistic = statistic;
-        this.token = token;
-        this.average = average;
         this.displayers = displayers;
-    }
-
-    getColourAnalysis() {
-        // Filter by reader
-        let relevantReadings = this.readings.filter(
+        let relevantReadings = readings.filter(
             (reading) =>
                 reading.isRelevant(
-                    ...this.filters
+                    ...filters
                 )
         );
-        // Get text analyses
-        let textAnalyses = new TextAnalyses(
+        // Set token analyses
+        this.tokenAnalyses = new TokenAnalyses(
             relevantReadings,
             this.text,
             this.token
         );
-        // Get average analysis
+        // Set text HSL hue values for heatmap display
         let averageAnalysis = new AveragedTextAnalysis(
-            textAnalyses.analyses,
+            this.tokenAnalyses,
             this.average,
             this.statistic
         );
-        return new ColourAnalysis(averageAnalysis.averages);
-    }
-
-}
-
-class FixationsDisplayer extends AnalysesDisplayer {
-
-    constructor(readings, text, filters, statistic, token, average, displayers) {
-        super(readings, text, filters, statistic, token, average, displayers);
+        this.textHues = new RatioList(
+            averageAnalysis,
+            0, // Red
+            120, // Green
+            true // Reverse since low values should be green and vice versa
+        );
+        // Set line-start indicator alpha values
+        let lineStarts = new AveragedTextAnalysis(
+            this.tokenAnalyses,
+            "mean",
+            "isLineStart"
+        );
+        this.borderAlphas = new RatioList(
+            lineStarts,
+            0, // transparent
+            1, // opaque
+            false
+        );
     }
 
     display() {
-        let colourAnalysis = this.getColourAnalysis();
         for (let i = this.displayers.length - 1; i >= 0; i--) {
-            this.displayers[i].setHue(colourAnalysis.hues[i]);
+            let nextDisplayer = this.displayers[i];
+            nextDisplayer.setTextColour(this.textHues[i]);
+            nextDisplayer.setBorderColour(this.borderAlphas[i]);
         }
     }
 
 }
 
-class RegressionsDisplayer extends AnalysesDisplayer {
+class PathDisplayer extends AnalysesDisplayer {
 
-    constructor(readings, text, filters, statistic, token, average, displayers) {
-        super(readings, text, filters, statistic, token, average, displayers);
+    constructor(readings, text, filters, statistic, token, average, analysisDisplayers, pathDisplayers) {
+        super(readings, text, filters, statistic, token, average, analysisDisplayers);
+        // Helper function
+        let getPathHues = (regressionType, statistic) => {
+            //
+            let pathAnalyses = this.tokenAnalyses.map(
+                (analysis) => analysis[regressionType][statistic]
+            );
+            //
+            let averagedPathAnalysis =
+            //
+            return new RatioList(
+                averagedPathAnalysis,
+                0, // Red
+                120, // Green
+                true // Reverse since low values should be green and vice versa
+            );
+        };
+        // Set fields
+        this.pathDisplayers = pathDisplayers;
+        this.pathHues = statistic.includes("InCount")?
+            this.pathHues = getPathHues("regressionInOrigins", "count"):
+            statistic.includes("InTime")?
+            this.pathHues = getPathHues("regressionInOrigins", "duration"):
+            statistic.includes("OutCount")?
+            this.pathHues = getPathHues("regressionOutDestinations", "count"):
+            this.pathHues = getPathHues("regressionOutDestinations", "duration"):
+
     }
 
     display() {
-        let colourAnalysis = this.getColourAnalysis();
+        super.display();
         for (let i = this.displayers.length - 1; i >= 0; i--) {
-            this.displayers[i].setHue(colourAnalysis.hues[i]);
+            this.displayers.onmouseover =
+                (i) => this.displayPaths(i);
         }
+    }
+
+}
+
+class CharacterDisplayer {
+
+    constructor(parentElement, character) {
+        this.element = document.createElement("span");
+        this.element.classList.add("character");
+        this.element.innerText = character;
+        parentElement.appendChild(this.element);
+    }
+
+    setProperty(property, value) {
+        this.element.style.setProperty(
+            property,
+            value
+        );
+    }
+
+    setColour(property, hue, saturation, lightness, alpha) {
+        this.setProperty(
+            property,
+            "hsla(" + hue + "," + saturation + "%," + lightness + "%," + alpha + ")"
+        );
+    }
+
+    setBorderColour(alpha) {
+        if (Number.isNaN(alpha) || alpha === 0) {
+            this.setProperty(
+                "border-left-style",
+                "none"
+            );
+        } else {
+            this.setProperty(
+                "border-left-style",
+                "solid"
+            );
+            this.setColour(
+                "border-color",
+                0, 0, 0, alpha
+            );
+        }
+    }
+
+    setTextColour(hue) {
+        let alpha;
+        if (Number.isNaN(hue)) {
+            alpha = 0;
+            hue = 0;
+        } else {
+            alpha = 0.6;
+        }
+        this.setColour(
+            "background-color",
+            hue, 100, 50, alpha
+        );
     }
 
 }
@@ -758,8 +937,8 @@ class ReadingManager {
         let others = this.getValues([this.statisticElement, this.tokenElement, this.averageElement]);
         let analysesDisplayer =
             this.isRegressionStatistic(this.statisticElement.value)?
-            new RegressionsDisplayer(this.readings, this.text, filters, ...others, this.displayers):
-            new FixationsDisplayer(this.readings, this.text, filters, ...others, this.displayers);
+            new PathDisplayer(this.readings, this.text, filters, ...others, this.displayers):
+            new AnalysesDisplayer(this.readings, this.text, filters, ...others, this.displayers);
         analysesDisplayer.display();
     }
 
