@@ -17,8 +17,9 @@
                 width: 800px;
             }
 
-            .character {
-                border-width: 4px;
+            .token {
+                border-width: 5px;
+                font: 20px lucida-console, monospace;
             }
 
         </style>
@@ -170,8 +171,8 @@
                 <div>
                     Statistic:
                     <select id="an_statistic_sel" onchange="readingManager.updateDisplay()">
-                        <option value="firstFixationDuration">First-Fixation Duration</option>
                         <option value="gazeDuration">Gaze Duration</option>
+                        <option value="firstFixationDuration">First-Fixation Duration</option>
                         <option value="spilloverTime">Spillover Time</option>
                         <option value="totalReadingTime">Total Reading Time</option>
                         <option value="regressionsInCount">Regressions In (quantity)</option>
@@ -182,7 +183,7 @@
                 </div>
                 <div>
                     Gender:
-                    <select id="an_gender_sel"  onchange="readingManager.updateDisplay()">
+                    <select id="an_gender_sel" onchange="readingManager.updateDisplay()">
                         <option value="all">All</option>
                         <option value="m">Male</option>
                         <option value="f">Female</option>
@@ -190,7 +191,7 @@
                 </div>
                 <div>
                     Reading Impairment:
-                    <select id="an_impairment_sel"  onchange="readingManager.updateDisplay()">
+                    <select id="an_impairment_sel" onchange="readingManager.updateDisplay()">
                         <option value="all">All</option>
                         <option value="y">Only Impaired</option>
                         <option value="n">Only Non-Impaired</option>

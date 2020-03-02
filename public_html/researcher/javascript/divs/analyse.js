@@ -442,7 +442,7 @@ class TokenAnalysis {
     regressionInOrigins = {};
     regressionOutDestinations = {};
 
-    constructor(character = new Character()) {
+    constructor(character = new Character(), tokenisedText) {
         if (character.fixations.length === 0) {
             this.isLineStart = NaN;
             this.isLineStart = NaN;
@@ -455,12 +455,23 @@ class TokenAnalysis {
             this.regressionsOutCount = NaN;
             this.regressionsOutTime = NaN;
         } else {
-            // Helper function
+            // Helper functions
+            let getTokenIndex = (charIndex) => {
+                if (tokenisedText === undefined) return charIndex;
+                let charCount = 0;
+                for (let tokenCount in tokenisedText) {
+                    charCount += tokenisedText[tokenCount].length;
+                    if (charCount >= charIndex) {
+                        return tokenCount;
+                    }
+                }
+            }
             let addRegressions = (regressions, statistic) => {
                 for (let regression of regressions) {
-                    this.addNewRegressionObject(statistic, regression.other);
-                    this[statistic][regression.other].count++;
-                    this[statistic][regression.other].duration += regression.pathDuration;
+                    let other = getTokenIndex(regression.other);
+                    this.addNewRegressionObject(statistic, other);
+                    this[statistic][other].count++;
+                    this[statistic][other].duration += regression.pathDuration;
                 }
             };
             // Get the first fixation of this character
@@ -510,137 +521,166 @@ class TokenAnalysis {
         this[statistic] += (newToken[statistic] - this[statistic]) / this.charLength
     }
 
-    addCharacter(character) {
-        this.charLength++;
-        let characterAnalysis = new TokenAnalysis(character);
+    mergeAnalysis(analysis) {
+        this.charLength += analysis.charLength;
         // First fixation duration is that of the new leftmost character
         // Spillover time is that of the new rightmost character
-        this.spilloverTime = characterAnalysis.spilloverTime;
-        // Regression path data is summed
-        this.mergeRegressions("regressionInOrigins", characterAnalysis);
-        this.mergeRegressions("regressionOutDestinations", characterAnalysis);
+        this.spilloverTime = analysis.spilloverTime;
+        // Regression data is summed
+        this.regressionsInCount += analysis.regressionsInCount;
+        this.regressionsInTime += analysis.regressionsInTime;
+        this.mergeRegressions("regressionInOrigins", analysis);
+        this.regressionsOutCount += analysis.regressionsOutCount;
+        this.regressionsOutTime += analysis.regressionsOutTime;
+        this.mergeRegressions("regressionOutDestinations", analysis);
         // Everything else uses the mean of all character values
-        // This prevents longer words from having inherently higher gaze durations, etc.
-        this.setNewAverage("gazeDuration", characterAnalysis);
-        this.setNewAverage("totalReadingTime", characterAnalysis);
-        this.setNewAverage("regressionsInCount", characterAnalysis);
-        this.setNewAverage("regressionsInTime", characterAnalysis);
-        this.setNewAverage("regressionsOutCount", characterAnalysis);
-        this.setNewAverage("regressionsOutTime", characterAnalysis);
-    }
-
-    getAnalyses() {
-        let analyses = [this]; // First character may be a line start
-        let analysisCopy = {
-            ...this,
-            isLineStart: false
-        }; // Latter characters may not
-        for (let i = 1; i < this.charLength; i++) {
-            analyses.push(analysisCopy);
-        }
-        return analyses;
+        // This prevents longer words from having inherently higher values
+        this.setNewAverage("gazeDuration", analysis);
+        this.setNewAverage("totalReadingTime", analysis);
     }
 
 }
 
 class TokenAnalyses extends Array {
 
+    toAveragedNumberArray(statistic, average) {
+        let numberArrays = [...this].map(
+            (token) => token.analyses.map(
+                (analysis) => Number(analysis[statistic]) // Convert booleans to binary integers
+            )
+        );
+        return (
+            average === "mean"?
+            new MeanAveragedArray(numberArrays):
+            new MedianAveragedArray(numberArrays)
+        );
+    }
+
+    getRegressionPaths(tokenIndex, regressionType, regressionStat) {
+        let mergedAnalysis = new TokenAnalysis();
+        for (let analysis of this[tokenIndex].analyses) {
+            mergedAnalysis.mergeRegressions(regressionType, analysis)
+        }
+        let regressionAnalysis = mergedAnalysis[regressionType];
+        let paths = [];
+        for (let i = 0; i < this.length; i++) {
+            paths[i] =
+                !regressionAnalysis.hasOwnProperty(i)?
+                0:
+                regressionAnalysis[i][regressionStat];
+        }
+        return paths;
+    }
+
+}
+
+class CharacterAnalyses extends TokenAnalyses {
+
     constructor(readings, text, token) {
         super();
-        // Initialise variables
-        let totalReadings = readings.length;
-        // Check for no readings
-        if (totalReadings === 0) {
-            this[0] = text.split("").map(
-                (character) => new TokenAnalysis()
-            );
-        } else {
-            // Get token list
-            switch (token) {
-                case "char":
-                    // Analyse by char
-                    for (let i = 0; i < totalReadings; i++) {
-                        this.push(
-                            readings[i].characters.map(
-                                (character) => new TokenAnalysis(character)
-                            )
-                        );
-                    }
-                    break;
-                case "word":
-                    // Analyse by word
-                    let totalCharacters = text.length;
-                    let isWord = text.split("").map(
-                        (character) => /\w/.test(character)
-                    );
-                    for (let i = 0; i < totalReadings; i++) {
-                        this[i] = [];
-                        let curReading = readings[i];
-                        let curAnalysis;
-                        for (let j = 0; j < totalCharacters; j++) {
-                            if (isWord[j]) {
-                                if (curAnalysis === undefined) {
-                                    curAnalysis = new TokenAnalysis(curReading.characters[j]);
-                                } else {
-                                    curAnalysis.addCharacter(curReading.characters[j]);
-                                }
-                                if (j === totalCharacters - 1) this[i].push(curAnalysis);
-                            } else {
-                                if (curAnalysis !== undefined) {
-                                    let curAnalyses = curAnalysis.getAnalyses();
-                                    this[i].push(...curAnalyses);
-                                    curAnalysis = undefined;
-                                }
-                                this[i].push(new TokenAnalysis());
-                            }
-                        }
-                    }
-                    break;
-                default:
-                    window.alert("Unrecognised token type: " + token);
+        // Analyse by character
+        for (let i = 0; i < text.length; i++) {
+            let curChar = ({
+                text: text[i],
+                analyses: []
+            });
+            for (let reading of readings) {
+                curChar.analyses.push(
+                    new TokenAnalysis(reading.characters[i])
+                );
+            }
+            this[i] = curChar;
+        }
+    }
+
+}
+
+class WordAnalyses extends TokenAnalyses {
+
+    constructor(readings, text, token) {
+        super();
+        // Get words
+        let totalCharacters = text.length;
+        let curWord;
+        for (let i = 0; i < totalCharacters; i++) {
+            let char = text[i];
+            if (/\w/.test(char)) {
+                if (curWord === undefined) {
+                    curWord = ({
+                        text: char,
+                        isWord: true,
+                        analyses: []
+                    });
+                } else {
+                    curWord.text += char;
+                }
+                if (i === totalCharacters - 1) this.push(curWord);
+            } else {
+                if (curWord !== undefined) {
+                    this.push(curWord);
+                    curWord = undefined;
+                }
+                this.push({
+                    text: char,
+                    isWord: false,
+                    analyses: []
+                });
+            }
+        }
+        // Analyse by word
+        let words = [...this].map(
+            (word) => word.text
+        );
+        for (let reading of readings) {
+            let totalCharCount = 0;
+            for (let word of this) {
+                let analysis = (
+                    word.isWord?
+                    new TokenAnalysis(reading.characters[totalCharCount], words):
+                    new TokenAnalysis() // Regression info on non-word characters is lost
+                );
+                let endChar = ++totalCharCount + word.text.length - 1;
+                while (totalCharCount < endChar) {
+                    let nextCharacter = reading.characters[totalCharCount++];
+                    analysis.mergeAnalysis(new TokenAnalysis(nextCharacter, words));
+                }
+                word.analyses.push(analysis);
+            }
+        }
+        for (let word of this) {
+            delete word.isWord; // No longer needed
+        }
+    }
+
+}
+
+class MeanAveragedArray extends Array {
+
+    constructor(numberArrays) {
+        super();
+        for (let i = 0; i < numberArrays.length; i++) {
+            this[i] = 0;
+            let nextArray = numberArrays[i];
+            // Set new averages
+            for (let j = 0; j < nextArray.length; j++) {
+                this[i] += (nextArray[j] - this[i]) / (j + 1);
             }
         }
     }
 
 }
 
-class AveragedTextAnalysis extends Array {
+class MedianAveragedArray extends Array {
 
-    constructor(analyses, average, statistic) {
+    constructor(numberArrays) {
         super();
-        // Declare variables
-        let totalReadings = analyses.length;
-        let totalCharacters = analyses[0].length;
-        // Initialise characters
-        for (let i = 0; i < totalCharacters; i++) {
-            this[i] = 0;
-        }
-        // Set averages
-        switch (average) {
-            case "mean":
-                for (let i = 0; i < totalReadings; i++) {
-                    let nextAnalysis = analyses[i];
-                    // Set new averages
-                    for (let j = 0; j < totalCharacters; j++) {
-                        this[j] +=
-                            (Number(nextAnalysis[j][statistic]) - // Convert booleans to binary integers
-                            this[j]) / (i + 1);
-                    }
-                }
-                break;
-            case "median":
-                for (let i = 0; i < totalCharacters; i++) {
-                    let sortedValues = new SortedNumberList();
-                    for (let j = 0; j < totalReadings; j++) {
-                        sortedValues.insert(
-                            Number(analyses[j][i][statistic])  // Convert booleans to binary integers
-                        );
-                    }
-                    this[i] = sortedValues.getMedian();
-                }
-                break;
-            default:
-                window.alert("Unrecognised average type: " + average);
+        for (let i = 0; i < numberArrays.length; i++) {
+            let nextArray = numberArrays[i];
+            let sortedValues = new SortedNumberList();
+            for (let j = 0; j < nextArray.length; j++) {
+                sortedValues.insert(nextArray[j]);
+            }
+            this[i] = sortedValues.getMedian();
         }
     }
 
@@ -664,125 +704,142 @@ class RatioList extends Array {
         }
         // Convert numbers to ratios
         let numberRange = maxNumber - minNumber;
-        if (numberRange === 0) {
-            // Avoid divides by zero
-            for (let i = 0; i < totalNumbers; i++) {
-                this.push(max);
-            }
-        } else {
-            let multiplier = (max - min) / numberRange;
-            let getMultiplicand =
-                reverse?
-                (number) => maxNumber - number:
-                (number) => number - minNumber;
-            for (let number of numbers) {
-                this.push(multiplier * getMultiplicand(number) + min);
-            }
+        let multiplier = (max - min) / numberRange;
+        let getMultiplicand =
+            reverse?
+            (number) => maxNumber - number:
+            (number) => number - minNumber;
+        for (let number of numbers) {
+            this.push(
+                number === 0?
+                NaN:
+                multiplier * getMultiplicand(number) + min
+            );
         }
     }
 
 }
 
-class AnalysesDisplayer {
+class StatisticDisplayer {
 
-    constructor(readings, text, filters, statistic, token, average, displayers) {
-        this.displayers = displayers;
+    displayers = [];
+
+    constructor(readings, text, filters, statistic, token, average) {
+        // Declare variables
         let relevantReadings = readings.filter(
             (reading) =>
                 reading.isRelevant(
                     ...filters
                 )
         );
-        // Set token analyses
-        this.tokenAnalyses = new TokenAnalyses(
+        let analysesClass = (
+            token === "char"?
+            CharacterAnalyses:
+            WordAnalyses
+        );
+        let tokenAnalyses = new analysesClass(
             relevantReadings,
-            this.text,
-            this.token
+            text,
+            token
         );
-        // Set text HSL hue values for heatmap display
-        let averageAnalysis = new AveragedTextAnalysis(
-            this.tokenAnalyses,
-            this.average,
-            this.statistic
-        );
-        this.textHues = new RatioList(
-            averageAnalysis,
+        let textHues = new RatioList(
+            tokenAnalyses.toAveragedNumberArray(statistic, average),
             0, // Red
             120, // Green
             true // Reverse since low values should be green and vice versa
         );
-        // Set line-start indicator alpha values
-        let lineStarts = new AveragedTextAnalysis(
-            this.tokenAnalyses,
-            "mean",
-            "isLineStart"
-        );
-        this.borderAlphas = new RatioList(
-            lineStarts,
+        let borderAlphas = new RatioList(
+            tokenAnalyses.toAveragedNumberArray("isLineStart", "mean"),
             0, // transparent
             1, // opaque
             false
         );
+        // Set fields
+        this.tokenAnalyses = tokenAnalyses;
+        this.textHues = textHues; // HSL hue values for heatmap display
+        this.borderAlphas = borderAlphas; // HSL alpha values for Line-start indicators
+        // Set up display
+        let displayDiv = document.getElementById("an_display");
+        displayDiv.innerHTML = "";
+        for (let token of tokenAnalyses) {
+            this.displayers.push(
+                new TokenDisplayer(displayDiv, token.text)
+            );
+        }
     }
 
     display() {
         for (let i = this.displayers.length - 1; i >= 0; i--) {
             let nextDisplayer = this.displayers[i];
-            nextDisplayer.setTextColour(this.textHues[i]);
+            nextDisplayer.setTokenColour(this.textHues[i]);
             nextDisplayer.setBorderColour(this.borderAlphas[i]);
         }
     }
 
 }
 
-class PathDisplayer extends AnalysesDisplayer {
+class PathDisplayer extends StatisticDisplayer {
 
-    constructor(readings, text, filters, statistic, token, average, analysisDisplayers, pathDisplayers) {
-        super(readings, text, filters, statistic, token, average, analysisDisplayers);
-        // Helper function
-        let getPathHues = (regressionType, statistic) => {
-            //
-            let pathAnalyses = this.tokenAnalyses.map(
-                (analysis) => analysis[regressionType][statistic]
-            );
-            //
-            let averagedPathAnalysis =
-            //
-            return new RatioList(
-                averagedPathAnalysis,
-                0, // Red
-                120, // Green
-                true // Reverse since low values should be green and vice versa
-            );
-        };
+    constructor(readings, text, filters, statistic, token, average) {
+        super(readings, text, filters, statistic, token, average);
         // Set fields
-        this.pathDisplayers = pathDisplayers;
-        this.pathHues = statistic.includes("InCount")?
-            this.pathHues = getPathHues("regressionInOrigins", "count"):
-            statistic.includes("InTime")?
-            this.pathHues = getPathHues("regressionInOrigins", "duration"):
-            statistic.includes("OutCount")?
-            this.pathHues = getPathHues("regressionOutDestinations", "count"):
-            this.pathHues = getPathHues("regressionOutDestinations", "duration"):
+        this.regressionType = (
+            statistic.includes("In")?
+            "regressionInOrigins":
+            "regressionOutDestinations"
+        );
+        this.regressionStat = (
+            statistic.includes("Count")?
+            "count":
+            "duration"
+        );
+    }
 
+    unhighlightDisplayers() {
+        for (let i = this.displayers.length - 1; i >= 0; i--) {
+            this.displayers[i].unHighlight();
+            this.displayers[i].element.onclick =
+                () => this.displayPaths(i);
+        }
     }
 
     display() {
+        this.unhighlightDisplayers();
         super.display();
+    }
+
+    displayPaths(tokenIndex) {
+        // Set new highlighting
+        this.unhighlightDisplayers();
+        this.displayers[tokenIndex].highlight();
+        // Set new onclick
+        this.displayers[tokenIndex].element.onclick =
+            () => this.display();
+        // Get paths
+        let paths = this.tokenAnalyses.getRegressionPaths(tokenIndex, this.regressionType, this.regressionStat);
+        // Get path hues
+        let pathHues = new RatioList(
+            paths,
+            0, // Red
+            120, // Green
+            true // Reverse since low values should be green and vice versa
+        );
         for (let i = this.displayers.length - 1; i >= 0; i--) {
-            this.displayers.onmouseover =
-                (i) => this.displayPaths(i);
+            let nextDisplayer = this.displayers[i];
+            nextDisplayer.setTokenColour(pathHues[i]);
         }
     }
 
 }
 
-class CharacterDisplayer {
+class TokenDisplayer {
 
-    constructor(parentElement, character) {
+    isHighlighted = false;
+
+    constructor(parentElement, text) {
         this.element = document.createElement("span");
-        this.element.classList.add("character");
-        this.element.innerText = character;
+        this.element.classList.add("token");
+        this.element.innerText = text;
         parentElement.appendChild(this.element);
     }
 
@@ -812,23 +869,61 @@ class CharacterDisplayer {
                 "solid"
             );
             this.setColour(
-                "border-color",
+                "border-left-color",
                 0, 0, 0, alpha
             );
         }
     }
 
-    setTextColour(hue) {
+    setTokenColour(hue) {
         let alpha;
         if (Number.isNaN(hue)) {
             alpha = 0;
             hue = 0;
+            if (!this.isHighlighted) {
+                this.setProperty(
+                    "opacity",
+                    0.4
+                );
+            }
         } else {
             alpha = 0.6;
+            this.setProperty(
+                "opacity",
+                1
+            );
         }
         this.setColour(
             "background-color",
             hue, 100, 50, alpha
+        );
+    }
+
+    highlight() {
+        this.isHighlighted = true;
+        this.setProperty(
+            "opacity",
+            1
+        );
+        this.setProperty(
+            "font-weight",
+            "bold"
+        );
+        this.setProperty(
+            "border-bottom-style",
+            "solid"
+        );
+    }
+
+    unHighlight() {
+        this.isHighlighted = false;
+        this.setProperty(
+            "font-weight",
+            "normal"
+        );
+        this.setProperty(
+            "border-bottom-style",
+            "none"
         );
     }
 
@@ -869,19 +964,11 @@ class ReadingManager {
     tokenElement = document.getElementById("an_token_sel");
     averageElement = document.getElementById("an_average_sel");
     readings = [];
-    displayers = [];
 
     constructor(text, title, version, readers) {
         // Initialise fields
         this.text = text;
         this.progressDisplayer = new ProgressDisplayer(readers.length);
-        // Display text
-        let displayDiv = document.getElementById("an_display");
-        displayDiv.innerHTML = "";
-        for (let char of text) {
-            let displayer = new CharacterDisplayer(displayDiv, char);
-            this.displayers.push(displayer);
-        }
         // Get data
         let addReadings = (readers) => {
             if (readers.length > 0) {
@@ -937,8 +1024,8 @@ class ReadingManager {
         let others = this.getValues([this.statisticElement, this.tokenElement, this.averageElement]);
         let analysesDisplayer =
             this.isRegressionStatistic(this.statisticElement.value)?
-            new PathDisplayer(this.readings, this.text, filters, ...others, this.displayers):
-            new AnalysesDisplayer(this.readings, this.text, filters, ...others, this.displayers);
+            new PathDisplayer(this.readings, this.text, filters, ...others):
+            new StatisticDisplayer(this.readings, this.text, filters, ...others);
         analysesDisplayer.display();
     }
 
