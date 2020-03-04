@@ -3,17 +3,18 @@
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
 
+    require_once("../lib/setHeaders.php");
     require_once("../lib/connectDB.php");
-    require_once("../lib/getPostVar.php");
+    require_once("../lib/getVariable.php");
     require_once("../lib/unboundQuery.php");
     require_once("../lib/respond.php");
 
-    function getWindows($conn, $title, $version, $reader) {
+    function getWindows($conn, $title, $version, $readerHash) {
         // Get all measurements from the given reading session
         $sql = "
             SELECT focalChar, leftmostChar, rightmostChar, duration
             FROM Windows
-            WHERE title='$title' AND version='$version' AND reader='$reader'
+            WHERE title = '$title' AND version = '$version' AND SHA2(reader, 224) = '$readerHash'
             ORDER BY sequenceNumber
         ";
         $dataRows = getQueryResult($conn, $sql);
@@ -33,9 +34,9 @@
 
     $title = getPostVar("title");
     $version = getPostVar("version");
-    $reader = getPostVar("reader");
+    $readerHash = getPostVar("readerHash");
 
-    $windows = getWindows($conn, $title, $version, $reader);
+    $windows = getWindows($conn, $title, $version, $readerHash);
 
     respond(true, json_encode($windows));
 

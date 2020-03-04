@@ -201,7 +201,8 @@
                     Minimum age: <input id="an_min_age_sel" type="number" min="0" max="255" value="0" onchange="readingManager.updateDisplay()" />
                     Maximum age: <input id="an_max_age_sel" type="number" min="0" max="255" value="255" onchange="readingManager.updateDisplay()" />
                 </div>
-                <input type="button" onclick="download()" value="Download JSON" />
+                <input type="button" onclick="readingManager.download(false)" value="Download JSON" />
+                <input type="button" onclick="readingManager.download(true)" value="Download CSV" />
 
                 <br><br>
 

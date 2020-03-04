@@ -10,6 +10,12 @@ function redirect(accountType) {
             window.location.href = '../reviewer/home.html';
             break;
         default:
-            window.location.href = '../login/login.html';
+            let logout = () => window.location.href = '../login/login.html';
+            postRequest(
+                [],
+                '../../private/lib/logout.php',
+                () => logout(),
+                () => logout()
+            );
     }
 }

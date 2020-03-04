@@ -4,17 +4,18 @@
 
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
-
+    
+    require_once("../lib/setHeaders.php");
     require_once("../lib/connectDB.php");
-    require_once("../lib/getPostVar.php");
+    require_once("../lib/getVariable.php");
     require_once("../lib/boundQuery.php");
     require_once("../lib/respond.php");
 
-    function createReadingEntry($conn, $title, $version, $reader, $availWidth, $availHeight) {
+    function createReadingEntry($conn, $title, $version, $reader, $wpm, $innerWidth, $innerHeight) {
         // Make a bound query for a single insert into the Readings table
-        $sql = "INSERT INTO Readings (title, version, reader, availWidth, availHeight) VALUES (?, ?, ?, ?, ?)";
-        $typeString = "sssii";
-        $valueArray = array(&$title, &$version, &$reader, &$availWidth, &$availHeight);
+        $sql = "INSERT INTO Readings (title, version, reader, wpm, innerWidth, innerHeight) VALUES (?, ?, ?, ?, ?, ?)";
+        $typeString = "sssiii";
+        $valueArray = array(&$title, &$version, &$reader, &$wpm, &$innerWidth, &$innerHeight);
         makeBoundQuery($conn, $sql, $typeString, $valueArray);
     }
 
@@ -40,16 +41,17 @@
 
     $conn = connectDB();
 
-    if (!$title = $_SESSION["title"]) respond(false, "No 'title' session variable.");
-    if (!$version = $_SESSION["version"]) respond(false, "No 'version' session variable.");
-    $reader = $_SESSION['username'];
-    $availWidth = getPostVar("availWidth");
-    $availHeight = getPostVar("availHeight");
+    $title = getSessionVar("title");
+    $version = getSessionVar("version");
+    $username = getSessionVar("username");
+    $wpm = getPostVar("wpm");
+    $innerWidth = getPostVar("innerWidth");
+    $innerHeight = getPostVar("innerHeight");
     $log = json_decode(getPostVar("log"), true);
     // Group all queries into a single transaction
     if (!$conn->autocommit(false)) respond(false, "Failed to start transaction: $conn->error");
 
-    createReadingEntry($conn, $title, $version, $reader, $availWidth, $availHeight);
+    createReadingEntry($conn, $title, $version, $reader, $wpm, $availWidth, $availHeight);
     createLogEntry($conn, $title, $version, $reader, $log);
 
     if (!$conn->commit()) respond(false, "Commit failed: $conn->error");

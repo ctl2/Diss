@@ -2,8 +2,9 @@
 
     session_start();
 
+    require_once("../lib/setHeaders.php");
     require_once("../lib/connectDB.php");
-    require_once("../lib/getPostVar.php");
+    require_once("../lib/getVariable.php");
     require_once("../lib/boundQuery.php");
     require_once("../lib/respond.php");
     require_once("../lib/login.php");
@@ -17,16 +18,18 @@
     }
 
     function createReaderAccount($conn, $username, $password, $dob, $gender, $isImpaired) {
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
         $sql = "INSERT INTO Readers (username, password, dob, gender, isImpaired) VALUES (?, ?, ?, ?, ?)";
         $typeString = "ssssi";
-        $valueArray = array(&$username, &$password, &$dob, &$gender, &$isImpaired);
+        $valueArray = array(&$username, &$passwordHash, &$dob, &$gender, &$isImpaired);
         makeBoundQuery($conn, $sql, $typeString, $valueArray);
     }
 
     function createResearcherAccount($conn, $username, $password) {
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
         $sql = "INSERT INTO Researchers (username, password) VALUES (?, ?)";
         $typeString = "ss";
-        $valueArray = array(&$username, &$password);
+        $valueArray = array(&$username, &$passwordHash);
         makeBoundQuery($conn, $sql, $typeString, $valueArray);
     }
 

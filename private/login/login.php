@@ -1,18 +1,17 @@
 <?php
 
-    session_start();
-
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
 
+    require_once("../lib/setHeaders.php");
     require_once("../lib/connectDB.php");
-    require_once("../lib/getPostVar.php");
+    require_once("../lib/getVariable.php");
     require_once("../lib/unboundQuery.php");
     require_once("../lib/respond.php");
     require_once("../lib/login.php");
 
-    function getAccountTypeResult($conn, $username, $password) {
-        $sql = "SELECT accountType FROM Accounts WHERE username='$username' AND password='$password'";
+    function getAccount($conn, $username) {
+        $sql = "SELECT password, accountType FROM Accounts WHERE username='$username'";
         return getQueryResult($conn, $sql);
     }
 
@@ -21,11 +20,15 @@
     $username = getPostVar("username");
     $password = getPostVar("password");
 
-    $accountTypeRows = getAccountTypeResult($conn, $username, $password);
+    $accountRows = getAccount($conn, $username);
 
-    if (mysqli_num_rows($accountTypeRows) === 0) respond(false, 'Account details were not recognised.');
+    if (mysqli_num_rows($accountRows) === 0) respond(false, 'Username was not recognised.');
 
-    switch ($accountTypeRows->fetch_assoc()['accountType']) {
+    $account = $accountRows->fetch_assoc();
+
+    if (!password_verify($password, "" . $account['password'])) respond(false, 'Password was not recognised.');
+
+    switch ($account['accountType']) {
         case "reader":
             login($username, "reader");
             break;

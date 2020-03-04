@@ -1,5 +1,7 @@
 <?php
 
+    session_start();
+
     require_once('respond.php');
 
     function login($username, $accountType) {
@@ -7,5 +9,5 @@
         $_SESSION["accountType"] = $accountType;
         respond(true, $accountType);
     }
-    
+
 ?>

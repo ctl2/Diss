@@ -133,6 +133,10 @@ class Session {
         }
     }
 
+    getTotalWords() {
+        return document.getElementsByClassName("word").length;
+    }
+
 }
 
 class FixationTimer {
@@ -150,17 +154,28 @@ class FixationTimer {
             leftmostChar: newWindow.leftmostCharIndex,
             rightmostChar: newWindow.rightmostCharIndex
         });
-        window.performance.clearMarks("end");
     }
 
     recordFixationEnd() {
         window.performance.mark("end");
-        this.log[this.log.length - 1].duration = window.performance.measure("", "start", "end").duration;
-        window.performance.clearMeasures("");
-        window.performance.clearMarks("start");
+        window.performance.measure("", "start", "end");
     }
 
     endTimer() {
+        // Record window duration data
+        let measures = window.performance.getEntriesByName("");
+        for (let i = 0; i < this.log.length; i++) {
+            let nextDuration = measures[i].duration;
+            this.log[i].duration = duration;
+            totalWindowDuration += duration;
+        }
+        // Record whole text duration data
+        let startTime = measures[0].startTime;
+        let endTime = measures[measures.length-1].startTime + measures[measures.length-1].duration;
+        this.minutes = (endTime - startTime) / (1000 * 60); // Divide by 1000 for seconds and 60 for minutes
+        // Clear measurements
+        window.performance.clearMeasures("");
+        window.performance.clearMarks("start");
         window.performance.clearMarks("end");
     }
 
@@ -252,8 +267,9 @@ class SessionManager {
         postRequest(
             [
                 "log=" + JSON.stringify(this.session.timer.log),
-                "availWidth=" + window.screen.availWidth,
-                "availHeight=" + window.screen.availHeight
+                "wpm=" + (this.session.getTotalWords() / this.session.timer.minutes)),
+                "innerWidth=" + window.innerWidth,
+                "innerHeight=" + window.innerHeight
             ],
             '../../private/reader/uploadReadingData.php',
             window.alert,
@@ -265,12 +281,8 @@ class SessionManager {
         if (window.confirm("Would you like to read another text?")) {
             this.startNewSession();
         } else {
-            this.logout();
+            redirect("");
         }
-    }
-
-    logout() {
-        postRequest([], '../../private/lib/logout.php', () => location.href='../login/login.html', window.alert);
     }
 
 }

@@ -37,8 +37,8 @@
         $tableName = "Readers";
         $sql = "
             CREATE TABLE `$tableName` (
-                username VARCHAR(10) NOT NULL,
-                password VARCHAR(10) NOT NULL,
+                username VARCHAR(20) NOT NULL,
+                password CHAR(60) NOT NULL,
                 dob DATE NOT NULL,
                 gender CHAR NOT NULL,
                 isImpaired BINARY NOT NULL,
@@ -55,8 +55,8 @@
         $tableName = "Researchers";
         $sql = "
             CREATE TABLE `$tableName` (
-                username VARCHAR(10) NOT NULL,
-                password VARCHAR(10) NOT NULL,
+                username VARCHAR(20) NOT NULL,
+                password CHAR(60) NOT NULL,
                 PRIMARY KEY (username)
             ) ENGINE=InnoDB
         ";
@@ -70,8 +70,8 @@
         $tableName = "Reviewers";
         $sql = "
             CREATE TABLE `$tableName` (
-                username VARCHAR(10) NOT NULL,
-                password VARCHAR(10) NOT NULL,
+                username VARCHAR(20) NOT NULL,
+                password CHAR(60) NOT NULL,
                 firstName VARCHAR(20) NOT NULL,
                 surname VARCHAR(20) NOT NULL,
                 email VARCHAR(30) NOT NULL,
@@ -88,7 +88,7 @@
         $tableName = "Applicants";
         $sql = "
             CREATE TABLE `$tableName` (
-                username VARCHAR(10) NOT NULL,
+                username VARCHAR(20) NOT NULL,
                 firstName VARCHAR(20) NOT NULL,
                 surname VARCHAR(20) NOT NULL,
                 email VARCHAR(30) NOT NULL,
@@ -107,8 +107,8 @@
         $tableName = "Reviews";
         $sql = "
             CREATE TABLE `$tableName` (
-                applicant VARCHAR(10) NOT NULL,
-                reviewer VARCHAR(10) NOT NULL,
+                applicant VARCHAR(20) NOT NULL,
+                reviewer VARCHAR(20) NOT NULL,
                 startDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (applicant),
                 FOREIGN KEY (applicant) references Researchers (username) ON UPDATE cascade ON DELETE cascade,
@@ -127,7 +127,7 @@
         $sql = "
             CREATE TABLE `$tableName` (
                 title VARCHAR(30) NOT NULL,
-                uploader VARCHAR(10) NOT NULL,
+                uploader VARCHAR(20) NOT NULL,
                 PRIMARY KEY (title),
                 FOREIGN KEY (uploader) references Researchers (username) ON UPDATE cascade ON DELETE cascade
             ) ENGINE=InnoDB
@@ -143,7 +143,7 @@
         $sql = "
             CREATE TABLE `$tableName` (
                 title VARCHAR(30) NOT NULL,
-                version VARCHAR(10) NOT NULL,
+                version VARCHAR(20) NOT NULL,
                 uploadDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 isPublic BINARY NOT NULL,
                 targetAgeMin TINYINT UNSIGNED,
@@ -164,7 +164,7 @@
         $sql = "
             CREATE TABLE `$tableName` (
                 title VARCHAR(30) NOT NULL,
-                version VARCHAR(10) NOT NULL,
+                version VARCHAR(20) NOT NULL,
                 sequenceNumber SMALLINT UNSIGNED NOT NULL,
                 chara VARCHAR(1) NOT NULL,
                 PRIMARY KEY (title, version, sequenceNumber),
@@ -182,10 +182,12 @@
         $sql = "
             CREATE TABLE `$tableName` (
                 title VARCHAR(30) NOT NULL,
-                version VARCHAR(10) NOT NULL,
-                reader VARCHAR(10) NOT NULL,
-                availWidth SMALLINT UNSIGNED NOT NULL,
-                availHeight SMALLINT UNSIGNED NOT NULL,
+                version VARCHAR(20) NOT NULL,
+                reader VARCHAR(20) NOT NULL,
+                readDate DATE NOT NULL,
+                wpm SMALLINT UNSIGNED NOT NULL,
+                innerWidth SMALLINT UNSIGNED NOT NULL,
+                innerHeight SMALLINT UNSIGNED NOT NULL,
                 PRIMARY KEY (title, version, reader),
                 FOREIGN KEY (title, version) references Characters (title, version) ON UPDATE cascade ON DELETE cascade,
                 FOREIGN KEY (reader) references Readers (username) ON UPDATE cascade ON DELETE restrict
@@ -202,8 +204,8 @@
         $sql = "
             CREATE TABLE `$tableName` (
                 title VARCHAR(30) NOT NULL,
-                version VARCHAR(10) NOT NULL,
-                reader VARCHAR(10) NOT NULL,
+                version VARCHAR(20) NOT NULL,
+                reader VARCHAR(20) NOT NULL,
                 sequenceNumber SMALLINT UNSIGNED NOT NULL,
                 focalChar SMALLINT UNSIGNED NOT NULL, -- The index of the character that was moused over to create this window
                 leftmostChar SMALLINT UNSIGNED NOT NULL,

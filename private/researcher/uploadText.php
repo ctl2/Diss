@@ -2,8 +2,9 @@
 
     session_start();
 
+    require_once("../lib/setHeaders.php");
     require_once("../lib/connectDB.php");
-    require_once("../lib/getPostVar.php");
+    require_once("../lib/getVariable.php");
     require_once("../lib/boundQuery.php");
     require_once("../lib/respond.php");
 
@@ -56,6 +57,7 @@
     // Connect to the database
     $conn = connectDB();
     // Retrieve mandatory arguments
+    $username = getSessionVar("username");
     $isNew = getPostVar('isNew');
     $text = getPostVar('text');
     $title = getPostVar('title');
@@ -69,7 +71,7 @@
     if (!$conn->autocommit(false)) respond(false, "Failed to start transaction: $conn->error");
     // Make queries
     if ($isNew == true) {
-        createTextEntry($conn, $title, $_SESSION['username']);
+        createTextEntry($conn, $title, $username);
     }
     createVersionEntry($conn, $title, $version, $isPublic, $targetAgeMin, $targetAgeMax, $targetGender);
     createCharactersEntry($conn, $title, $version, $text);

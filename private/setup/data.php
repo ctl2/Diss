@@ -14,7 +14,7 @@
     function addResearcher($conn, $username, $password) {
         $sql = $conn->prepare("INSERT INTO Researchers(username, password) VALUES (?, ?)");
         $sql->bind_param("ss", $username, $password);
-        add($conn, "Reviewers", $sql);
+        add($conn, "Researchers", $sql);
     }
 
     function add($conn, $table, $sql) {
@@ -44,7 +44,7 @@
     $conn = connectDB();
 
     for ($i = 0; $i < 100; $i++) {
-        addResearcher($conn, "reviewer" . $i, "reviewer" . $i);
+        addResearcher($conn, "researcher$i", password_hash("researcher$i", PASSWORD_DEFAULT));
     }
 
     for ($i = 0; $i < 100; $i++) {
@@ -55,7 +55,7 @@
             $gender = "f";
         }
         $isImpaired = rand(0,1);
-        addReader($conn, "reader" . $i, "reader" . $i, $dob, $gender, $isImpaired);
+        addReader($conn, "reader$i", password_hash("reader$i", PASSWORD_DEFAULT), $dob, $gender, $isImpaired);
     }
 
 

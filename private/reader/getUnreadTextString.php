@@ -5,6 +5,7 @@
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
 
+    require_once("../lib/setHeaders.php");
     require_once("../lib/connectDB.php");
     require_once("../lib/unboundQuery.php");
     require_once("../lib/respond.php");
@@ -42,7 +43,7 @@
 
     $conn = connectDB();
 
-    $reader = $_SESSION['username'];
+    $reader = getSessionVar('username');
 
     $textString = getUnreadTextString($conn, $reader);
 
