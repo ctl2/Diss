@@ -39,16 +39,6 @@ analysisNamespace.SortedList = class extends Array {
         );
     }
 
-    getMedian() {
-        return this.getNumber(this[Math.floor(this.length / 2)]);
-    }
-
-    getMean() {
-        return (this.length === 0)?
-            0:
-            this.getSum() / (this.length);
-    }
-
 }
 
 analysisNamespace.SortedNumberList = class extends SortedList {
@@ -74,6 +64,16 @@ analysisNamespace.SortedNumberList = class extends SortedList {
             return true;
         }
         return false;
+    }
+
+    getMedian() {
+        return this.getNumber(this[Math.floor(this.length / 2)]);
+    }
+
+    getMean() {
+        return (this.length === 0)?
+            0:
+            this.getSum() / (this.length);
     }
 
 }
@@ -112,6 +112,38 @@ analysisNamespace.SortedObjectList = class extends SortedList {
             }
         }
         return false;
+    }
+
+    getAverage(average, idList) {
+        if (idList.length === 0) return NaN;
+        let averageMethod = this[average[0].toUpperCase() + average.slice(1)];
+        return averageMethod(idList);
+    }
+
+    getMedian(idList) {
+        let positionsFromMedian = Math.floor(idList.length / 2);
+        for (let object of this) {
+            if (idList.some(
+                (id) => id === object[this.idKey]
+            )) {
+                if (positionsFromMedian-- === 0) {
+                    return this.getNumber(object);
+                }
+            }
+        }
+    }
+
+    getMean(idList) {
+        if (idList.length === 0) return NaN;
+        let total = 0;
+        for (let object of this) {
+            if (idList.some(
+                (id) => id === object[this.idKey]
+            )) {
+                total += this.getNumber(object);
+            }
+        }
+        return total / idList.length;
     }
 
 }
@@ -285,31 +317,39 @@ analysisNamespace.Regression = class {
 
 }
 
-analysisNamespace.Character = class {
+analysisNamespace.RegressionSet = class extends Array {
 
-    fixations = [];
-    regressionsOut = {};
-    regressionsIn = {};
-
-    constructor(isLineStart) {
-        super();
-        this.isLineStart = isLineStart;
+    addRegressionSet(regressionSet) {
+        for (let otherChar of regressionSet) {
+            let regression = regressionSet[otherChar];
+            this.addRegression(otherChar, regression.pathDuration, regression.count);
+        }
     }
 
-    addRegression(regressionType, otherChar, pathDuration) {
-        let otherChar = regression.otherChar;
+    addRegression(otherChar, pathDuration, count = 1) {
         this.addNewRegressionObject(statistic, otherChar);
-        this[regressionType][otherChar].count++;
-        this[regressionType][otherChar].pathDuration += pathDuration;
+        this[otherChar].count += count;
+        this[otherChar].pathDuration += pathDuration;
     }
 
     addNewRegressionObject(statistic, otherChar) {
-        if (!this[regressionType].hasOwnProperty(otherChar)) {
-            this[regressionType][otherChar] = {
+        if (!this.hasOwnProperty(otherChar)) {
+            this[otherChar] = {
                 count: 0,
                 pathDuration: 0
             };
         }
+    }
+
+}
+
+analysisNamespace.Character = class extends analysisNamespace.RegressionSet {
+
+    fixations = [];
+
+    constructor(isLineStart) {
+        super();
+        this.isLineStart = isLineStart;
     }
 
 }
@@ -441,7 +481,7 @@ analysisNamespace.CharacterPath = class extends Array {
 
 }
 
-analysisNamespace.Token = class {
+analysisNamespace.TokenAnalysis = class {
 
     constructor(characters, tokenisedText) {
         super();
@@ -488,7 +528,9 @@ analysisNamespace.Token = class {
                 )
             ) / tokenLength;
             // Record regression paths
-            let collectorChar = new Character();
+            this.regressions = {}
+            this.regressions.regressionsOut = new analysisNamespace.RegressionSet();
+            this.regressions.regressionsIn = new analysisNamespace.RegressionSet();
             let getTokenIndex = (charIndex) => {
                 if (tokenisedText === undefined) return charIndex;
                 let charCount = 0;
@@ -499,59 +541,50 @@ analysisNamespace.Token = class {
                     }
                 }
             };
-            let collectRegressions = (regressionType, newChar) => {
+            let addRegressions = (regressionType, newChar) => {
                 for (let otherChar in newChar[regressionType]) {
-                    collectorChar.addRegression(
-                        regressionType,
+                    this[regressionType].addRegression(
                         getTokenIndex(otherChar),
                         newChar[regressionType][otherChar].pathDuration
                     );
                 }
             };
             for (let char of characters) {
-                collectRegressions("regressionsIn", char);
-                collectRegressions("regressionsOut", char);
+                addRegressions("regressionsIn", char);
+                addRegressions("regressionsOut", char);
             }
-            this.regressionsIn = collectorChar.regressionsIn;
-            this.regressionsOut = collectorChar.regressionsOut;
         }
     }
 
 }
 
-analysisNamespace.TokenList = class extends Array {
+analysisNamespace.TokenAnalysisList = class extends Array {
 
     getRegressionPaths(tokenIndex, regressionType, regressionStat) {
-        let mergedAnalysis = new TokenAnalysis();
-        for (let analysis of this[tokenIndex].analyses) {
-            mergedAnalysis.mergeRegressions(regressionType, analysis)
-        }
-        let regressionAnalysis = mergedAnalysis[regressionType];
+        let regressions = this[tokenIndex].analyses.regressions[regressionType];
         let paths = [];
         for (let i = 0; i < this.length; i++) {
             paths[i] =
-                !regressionAnalysis.hasOwnProperty(i)?
+                !regressions.hasOwnProperty(i)?
                 0:
-                regressionAnalysis[i][regressionStat];
+                regressions[i][regressionStat];
         }
         return paths;
     }
 
 }
 
-analysisNamespace.CharacterList = class extends analysisNamespace.TokenList {
+analysisNamespace.CharacterAnalysisList = class extends analysisNamespace.TokenAnalysisList {
 
     constructor(readings, chars) {
         super();
         // Analyse by character
+        let characterAnalysisList = Array.from(chars)
+        this.push
         for (let i = 0; i < text.length; i++) {
-            let curChar = ({
-                text: chars[i],
-                analyses: []
-            });
             for (let reading of readings) {
                 curChar.analyses.push(
-                    new Token(reading.characters[i])
+                    new TokenAnalysis(reading.characters[i])
                 );
             }
             this[i] = curChar;
@@ -560,32 +593,21 @@ analysisNamespace.CharacterList = class extends analysisNamespace.TokenList {
 
 }
 
-analysisNamespace.WordList = class extends analysisNamespace.TokenList {
+analysisNamespace.WordAnalysisList = class extends analysisNamespace.TokenList {
 
-    constructor(readings, words) {
+    constructor(reading, words) {
         super();
         // Analyse by word
-        let words = [...this].map(
-            (word) => word.text
-        );
-        for (let reading of readings) {
-            let totalCharCount = 0;
-            for (let word of this) {
-                let analysis = (
-                    word.isWord?
-                    new TokenAnalysis(reading.characters[totalCharCount], words):
-                    new TokenAnalysis() // Regression info on non-word characters is lost
+        let totalCharCount = 0;
+        for (let word of words) {
+            if (!word.isIgnored) {
+                let characterAnalysisList = Array.from(word.text).map(
+                    (char, index) => reading.characters[totalCharCount + index]
                 );
-                let endChar = ++totalCharCount + word.text.length - 1;
-                while (totalCharCount < endChar) {
-                    let nextCharacter = reading.characters[totalCharCount++];
-                    analysis.mergeAnalysis(new TokenAnalysis(nextCharacter, words));
-                }
-                word.analyses.push(analysis);
+                let wordAnalysis = new TokenAnalysis(characterAnalysisList);
+                this.push(wordAnalysis);
+                totalCharCount += word.length;
             }
-        }
-        for (let word of this) {
-            delete word.isWord; // No longer needed
         }
     }
 
@@ -634,11 +656,8 @@ analysisNamespace.Reader = class {
         this.isImpaired = reader.isImpaired;
     }
 
-    isWithinGroup(minWPM, maxWPM, gender, impairment, minAge, maxAge) {
+    isWithinGroup(gender, impairment, minAge, maxAge, minWPM, maxWPM) {
         return (
-            winWPM <= this.wpm &&
-            maxWPM >= this.wpm
-        ) && (
             // Gender check
             gender == "all" ||
             gender == this.gender
@@ -651,7 +670,11 @@ analysisNamespace.Reader = class {
             // Age check
             minAge <= this.age &&
             maxAge >= this.age
-        )
+        ) && (
+            // Reading speed check
+            winWPM <= this.wpm &&
+            maxWPM >= this.wpm
+        );
     }
 
 }
@@ -659,9 +682,28 @@ analysisNamespace.Reader = class {
 analysisNamespace.Text = class extends Array {
 
     constructor(rawTokens) {
-        for (let token of rawTokens) {
-
-        }
+        super();
+        let statisticNameList = [
+            "isLineStart",
+            "firstFixationDuration",
+            "gazeDuration",
+            "spilloverTime",
+            "totalReadingTime",
+            "regressionsInCount",
+            "regressionsInTime",
+            "regressionsOutCount",
+            "regressionsOutTime"
+        ];
+        let addStatisticTrackers = (tokenList) => {
+            for (let token of tokenList) {
+                let statistics = {};
+                for (let statisticName of statisticNameList) {
+                    statistics[statisticName] = new analysisNamespace.SortedObjectList("usernameHash", "value");
+                }
+                let statisticTracker = Object.assign({statistics: statistics}, token);
+                this.push(statisticTracker);
+            }
+        };
     }
 
     addTokenList(tokenList) {
@@ -675,52 +717,32 @@ analysisNamespace.Text = class extends Array {
         }
     }
 
-    getAverage(averageMethodName, statistic) {
+    getAverage(average, statistic, idList) {
+        let averageMethodName = "get" + average[0].toUpperCase() + average.slice(1);
         return (
             statistic === undefined?
             // Return all statistics
             this.map(
                 (token) => {
                     let averages = {};
-                    for (let statistic of this.statisticNames) {
-                        averages[statistic] = token.statistics[statistic][averageMethodName]();
+                    for (let statistic of token.statistics) {
+                        averages[statistic] = statistic[averageMethodName](idList);
                     }
                     return averages;
                 }
             ):
             // Return a single statistic
             this.map(
-                (token) => token.statistics[statistic][averageMethodName]()
+                (token) => token.statistics[statistic][averageMethodName](idList)
             );
         );
-    }
-
-    getMeans(statistic) {
-        return getAverage("getMean", statistic);
-    }
-
-    getMedians(statistic) {
-        return getAverage("getMedian", statistic);
     }
 
 }
 
 analysisNamespace.ReadingManager = class {
 
-    statisticNameList = [
-        "isLineStart",
-        "firstFixationDuration",
-        "gazeDuration",
-        "spilloverTime",
-        "totalReadingTime",
-        "regressionsInCount",
-        "regressionsInTime",
-        "regressionsOutCount",
-        "regressionsOutTime"
-    ];
     readers = {};
-    chars = [];
-    words = [];
 
     constructor(readers, chars, words) {
         // Initialise readings field
@@ -728,38 +750,56 @@ analysisNamespace.ReadingManager = class {
             this.readers[identifier] = new analysisNamespace.Reader(readers[identifier]);
         }
         // Initialise text fields
-        let addStatisticTrackers = (trackerList, tokenList) => {
-            for (let token of tokenList) {
-                let statistics = {};
-                for (let statisticName of this.statisticNameList) {
-                    statistics[statisticName] = new analysisNamespace.SortedObjectList("usernameHash", "value");
-                }
-                let statisticTracker = Object.assign({statistics: statistics}, token);
-                tokenList.push(statisticTracker);
-            }
-        };
-        addStatisticTrackers(this.chars, chars);
-        addStatisticTrackers(this.words, words);
+        this.chars = new analysisNamespace.Text(chars);
+        this.words = new analysisNamespace.Text(words);
     }
 
     addReading(usernameHash, windows) {
-        readers[usernameHash].windowPath = new analysisNamespace.WindowPath(windows, reading.wpm);
-        readers[usernameHash].charPath = new analysisNamespace.CharacterPath(readers[usernameHash].windowPath, this.chars);
-        readers[usernameHash].charAnalysis = new analysisNamespace.CharacterAnalysis(readers[usernameHash].characterPath, this.chars);
-        readers[usernameHash].wordAnalysis = new analysisNamespace.WordAnalysis(readers[usernameHash].characterPath, this.words);
+        let reader = this.readers[usernameHash];
+        reader.windowPath = new analysisNamespace.WindowPath(windows, reading.wpm);
+        reader.charPath = new analysisNamespace.CharacterPath(readers[usernameHash].windowPath, this.chars);
+        reader.charAnalysis = new analysisNamespace.CharacterAnalysis(readers[usernameHash].characterPath, this.chars);
+        reader.wordAnalysis = new analysisNamespace.WordAnalysis(readers[usernameHash].characterPath, this.words);
+        //
+        this.chars.addTokenList(reader.charAnalysis);
+        this.words.addTokenList(reader.wordAnalysis);
     }
 
-    getHueAnalysis(token, statistic, average) {
-        let analyses = Object.values(this.readings).map(
-            (reading) => reading[token + "Analysis"].toNumberArray(statistic)
+    getColourData(token, statistic, average, filters) {
+        let relevantReaders = [];
+        for (let usernameHash in this.readers) {
+            if (this.readers[usernameHash].isWithinGroup(...filters)) {
+                relevantReaders.push(usernameHash);
+            }
+        }
+        let tokenList = this[token + "s"];
+        return {
+            hueList: getHueList(tokenList, statistic, average, relevantReaders),
+            borderAlphaList: getBorderAlphaList(tokenList, relevantReaders)
+        }
+    }
+
+    getHueList(tokenList, statistic, average, relevantReaders) {
+        let average = tokenList.map(
+            (token) => token.statistics[statistic].getAverage(average, relevantReaders)
         );
-        let averageClass = analysisNamespace[average[0].toUpperCase() + average.slice(1) + "AveragedArray"];
-        let averageAnalysis = new averageClass(analyses);
         return new analysisNamespace.RatioList(
-            averageAnalysis,
+            average,
             0, // Red
             120, // Green
             true // Reverse since small values should be green and large values red
+        );
+    }
+
+    getBorderAlphaList(tokenList, relevantReaders) {
+        let average = tokenList.map(
+            (token) => token.statistics.isLineStart.getMean(relevantReaders)
+        );
+        return new analysisNamespace.RatioList(
+            average,
+            0, // transparent
+            1, // opaque
+            false
         );
     }
 
@@ -775,6 +815,10 @@ analysisNamespace.TokenDisplayer = class {
         this.element.innerText = text;
         parentElement.appendChild(this.element);
     }
+
+}
+
+analysisNamespace.TokenAnalysisDisplayer = class extends TokenDisplayer {
 
     setProperty(property, value) {
         this.element.style.setProperty(
@@ -862,19 +906,65 @@ analysisNamespace.TokenDisplayer = class {
 
 }
 
+analysisNamespace.TokenAnalysisDisplayerList = class extends Array {
+
+    constructor(parentDiv, tokens) {
+        super();
+        this.tokenDisplayerList.wordList.displayerList = tokens.map(
+            (token) => (
+                token.isIgnored?
+                new analysisNamespace.TokenDisplayer(parentDiv, token.text):
+                new analysisNamespace.TokenAnalysisDisplayer(parentDiv, token.text)
+            )
+        );
+    }
+
+    setColours(hueList, borderAlphaList) {
+        for (let i = this.length - 1; i >= 0; i--) {
+            let nextDisplayer = this[i];
+            nextDisplayer.setTokenColour(hueList[i]);
+            nextDisplayer.setBorderColour(borderAlphaList[i]);
+        }
+    }
+
+    reset() {
+        for (let i = this.length - 1; i >= 0; i--) {
+            this[i].unHighlight();
+            this[i].element.onclick = (
+                () => this.displayPaths(i)
+            );
+        }
+    }
+
+    highlight(tokenIndex) {
+        this.unhighlightDisplayers();
+        this[tokenIndex].highlight();
+    }
+
+}
+
 analysisNamespace.StatisticDisplayer = class {
 
-    charDisplayers = [];
-    wordDisplayers = [];
+    tokenDisplayerList = {
+        charList: {
+            isActive: false
+        },
+        wordList: {
+            isActive: false
+        }
+    }
+    regressionStat;
 
     constructor(text, readers) {
         // Initialise text fields
         let totalCharacters = text.length;
+        let chars = [];
+        let words = [];
         let curWord;
         for (let i = 0; i < totalCharacters; i++) {
             let char = text[i];
-            this.chars[i] = {
-                text:char,
+            chars[i] = {
+                text: char,
                 isIgnored: false
             };
             if (/\w/.test(char)) {
@@ -886,76 +976,79 @@ analysisNamespace.StatisticDisplayer = class {
                 } else {
                     curWord.text += char;
                 }
-                if (i === totalCharacters - 1) this.words.push(curWord);
+                if (i === totalCharacters - 1) words.push(curWord);
             } else {
                 if (curWord !== undefined) {
-                    this.words.push(curWord);
+                    words.push(curWord);
                     curWord = undefined;
                 }
-                this.words.push({
+                words.push({
                     text: char,
                     isIgnored: true
                 });
             }
         }
-        this.readingManager = new analysisNamespace.ReadingManager(text, readers);
-
-        for (let token of tokenAnalyses) {
-            this.displayers.push(
-                new TokenDisplayer(displayDiv, token.text)
-            );
-        }
+        this.readingManager = new analysisNamespace.ReadingManager(readers, chars, words);
+        // Initialise displayers
+        let parentDiv = document.getElementById("an_display");
+        this.tokenDisplayerList.charList.displayerList = new analysisNamespace.TokenAnalysisDisplayerList(parentDiv, chars);
+        this.tokenDisplayerList.wordList.displayerList = new analysisNamespace.TokenAnalysisDisplayerList(parentDiv, words);
     }
 
-    display() {
-        for (let i = this.displayers.length - 1; i >= 0; i--) {
-            let nextDisplayer = this.displayers[i];
-            nextDisplayer.setTokenColour(this.textHues[i]);
-            nextDisplayer.setBorderColour(this.borderAlphas[i]);
-        }
+    addReading(usernameHash, windows) {
+        this.readingManager.addReading(usernameHash, windows);
+        this.display();
     }
 
-}
+    isRegressionStatistic(statistic) {
+        return statistic[0] === "r";
+        // return (
+        //     statistic != "firstFixationDuration" &&
+        //     statistic != "gazeDuration" &&
+        //     statistic != "spilloverTime" &&
+        //     statistic != "totalReadingTime"
+        // );
+    }
 
-analysisNamespace.PathDisplayer = class extends analysisNamespace.StatisticDisplayer {
-
-    constructor(readings, text, filters, statistic, token, average) {
-        super(readings, text, filters, statistic, token, average);
-        // Set fields
-        this.regressionType = (
-            statistic.includes("In")?
-            "regressionInOrigins":
-            "regressionOutDestinations"
-        );
+    display(token, statistic, average, filters) {
         this.regressionStat = (
-            statistic.includes("Count")?
-            "count":
-            "duration"
+            this.isRegressionStatistic(statistic)?
+            statistic:
+            undefined
         );
+        this.resetDisplayers();
+        let tokenList = this.tokenDisplayerList[token + "List"];
+        tokenList.isActive = true;
+        let colourData = this.readingManager.getColourData(token, statistic, average, filters);
+        tokenList.displayerList.setColours(colourData);
+    }
+
+    resetDisplayers() {
+        for (let tokenList of this.tokenDisplayerList) {
+            tokenList.displayerList.reset();
+        }
     }
 
     unhighlightDisplayers() {
-        for (let i = this.displayers.length - 1; i >= 0; i--) {
-            this.displayers[i].unHighlight();
-            this.displayers[i].element.onclick =
-                () => this.displayPaths(i);
+        for (let tokenList of this.tokenDisplayerList) {
+            tokenList.displayerList.unhighlight();
         }
     }
 
-    display() {
-        this.unhighlightDisplayers();
-        super.display();
-    }
-
-    displayPaths(tokenIndex) {
+    displayPaths(tokenIndex, regressionType, regressionStat) {
+        if (this.regressionStat === undefined) return;
         // Set new highlighting
-        this.unhighlightDisplayers();
-        this.displayers[tokenIndex].highlight();
+        let activeDisplayerList = (
+            this.tokenDisplayerList.charList.isActive?
+            this.tokenDisplayerList.charList.displayerList:
+            this.tokenDisplayerList.wordList.displayerList
+        );
+        activeDisplayerList.highlight(tokenIndex);
         // Set new onclick
-        this.displayers[tokenIndex].element.onclick =
+        activeDisplayerList[tokenIndex].element.onclick =
             () => this.display();
         // Get paths
-        let paths = this.tokenAnalyses.getRegressionPaths(tokenIndex, this.regressionType, this.regressionStat);
+        let paths = this.readingManager.getRegressionPaths(tokenIndex, regressionType, regressionStat);
         // Get path hues
         let pathHues = new RatioList(
             paths,
@@ -996,12 +1089,14 @@ analysisNamespace.ProgressDisplayer = class {
 
 analysisNamespace.InterfaceManager = class {
 
-    gender = document.getElementById("an_gender_sel").value;
-    impairment = document.getElementById("an_impairment_sel").value;
-    minAge = document.getElementById("an_min_age").value;
-    maxAge = document.getElementById("an_max_age").value;
-    minWPM = document.getElementById("an_min_wpm").value;
-    maxWPM = document.getElementById("an_max_wpm").value;
+    filters = {
+        gender: document.getElementById("an_gender_sel").value,
+        impairment: document.getElementById("an_impairment_sel").value,
+        minAge: document.getElementById("an_min_age").value,
+        maxAge: document.getElementById("an_max_age").value,
+        minWPM: document.getElementById("an_min_wpm").value,
+        maxWPM: document.getElementById("an_max_wpm").value
+    };
     statistic = document.getElementById("an_statistic_sel").value;
     token = document.getElementById("an_token_sel").value;
     average = document.getElementById("an_average_sel").value;
@@ -1021,7 +1116,7 @@ analysisNamespace.InterfaceManager = class {
                     // Add the next reading
                     (windows) => {
                         this.progressDisplayer.addSuccess();
-                        this.readingManager.addReading(nextReader, JSON.parse(windows));
+                        this.statisticDisplayer.addReading(nextReader, JSON.parse(windows));
                         addReadings(usernameHashes);
                     }
                 );
@@ -1046,7 +1141,7 @@ analysisNamespace.InterfaceManager = class {
                         window.alert,
                         (text) => {
                             // Handle text
-                            this.readingManager = new analysisNamespace.ReadingManager(text, readers);
+                            this.statisticDisplayer = new analysisNamespace.StatisticDisplayer(text, readers);
                             this.progressDisplayer = new analysisNamespace.ProgressDisplayer(readerUsernameHashes.length);
                             addReadings(readerUsernameHashes);
                         }
@@ -1061,26 +1156,8 @@ analysisNamespace.InterfaceManager = class {
         this.updateDisplay();
     }
 
-    isRegressionStatistic(statistic) {
-        return (
-            statistic != "firstFixationDuration" &&
-            statistic != "gazeDuration" &&
-            statistic != "spilloverTime" &&
-            statistic != "totalReadingTime"
-        );
-    }
-
     updateDisplay() {
-        // Get values from elements
-        let filters = this.getValues(this.filterElements);
-        let others = this.getValues([this.statisticElement, this.tokenElement, this.averageElement]);
-        // Perform analysis
-        this.analysesDisplayer =
-            this.isRegressionStatistic(this.statisticElement.value)?
-            new PathDisplayer(this.readings, this.text, filters, ...others):
-            new StatisticDisplayer(this.readings, this.text, filters, ...others);
-        // Display analysis
-        this.ReadingManager.display();
+        this.statisticDisplayer.display(this.token, this.statistic, this.average, this.filters);
     }
 
     getFileContents(asCSV) {
