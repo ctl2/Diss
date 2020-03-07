@@ -579,16 +579,10 @@ analysisNamespace.CharacterAnalysisList = class extends analysisNamespace.TokenA
     constructor(readings, chars) {
         super();
         // Analyse by character
-        let characterAnalysisList = Array.from(chars)
-        this.push
-        for (let i = 0; i < text.length; i++) {
-            for (let reading of readings) {
-                curChar.analyses.push(
-                    new TokenAnalysis(reading.characters[i])
-                );
-            }
-            this[i] = curChar;
-        }
+        let characterAnalysisList = Array.from(chars).map(
+            (char, index) => new TokenAnalysis(reading.characters[index])
+        )
+        this.push(...characterAnalysisList);
     }
 
 }
@@ -744,22 +738,22 @@ analysisNamespace.ReadingManager = class {
 
     readers = {};
 
-    constructor(readers, chars, words) {
+    constructor(chars, words, readers, token) {
+        // Initialise text fields
+        this.charAnalysisList = new analysisNamespace.FullAnalysis(chars);
+        this.wordAnalysisList = new analysisNamespace.FullAnalysis(words);
         // Initialise readings field
         for (let identifier in readers) {
             this.readers[identifier] = new analysisNamespace.Reader(readers[identifier]);
         }
-        // Initialise text fields
-        this.chars = new analysisNamespace.Text(chars);
-        this.words = new analysisNamespace.Text(words);
     }
 
     addReading(usernameHash, windows) {
         let reader = this.readers[usernameHash];
         reader.windowPath = new analysisNamespace.WindowPath(windows, reading.wpm);
         reader.charPath = new analysisNamespace.CharacterPath(readers[usernameHash].windowPath, this.chars);
-        reader.charAnalysis = new analysisNamespace.CharacterAnalysis(readers[usernameHash].characterPath, this.chars);
-        reader.wordAnalysis = new analysisNamespace.WordAnalysis(readers[usernameHash].characterPath, this.words);
+        reader.charAnalysis = new analysisNamespace.CharacterAnalysisList(readers[usernameHash].characterPath, this.chars);
+        reader.wordAnalysis = new analysisNamespace.WordAnalysisList(readers[usernameHash].characterPath, this.words);
         //
         this.chars.addTokenList(reader.charAnalysis);
         this.words.addTokenList(reader.wordAnalysis);
@@ -774,8 +768,8 @@ analysisNamespace.ReadingManager = class {
         }
         let tokenList = this[token + "s"];
         return {
-            hueList: getHueList(tokenList, statistic, average, relevantReaders),
-            borderAlphaList: getBorderAlphaList(tokenList, relevantReaders)
+            hueList: this.getHueList(tokenList, statistic, average, relevantReaders),
+            borderAlphaList: this.getBorderAlphaList(tokenList, relevantReaders)
         }
     }
 
@@ -808,19 +802,19 @@ analysisNamespace.ReadingManager = class {
 analysisNamespace.TokenDisplayer = class {
 
     isHighlighted = false;
+    children = [];
 
-    constructor(parentElement, text) {
+    constructor(parentElement, text, highlightedOnclick, unHighlightedOnclick) {
         this.element = document.createElement("span");
         this.element.classList.add("token");
         this.element.innerText = text;
         parentElement.appendChild(this.element);
+        this.activeOnclick = unhighlightedOnclick;
+        this.inactiveOnclick = highlightedOnclick;
+        this.element.onclick = () => this.activeOnclick();
     }
 
-}
-
-analysisNamespace.TokenAnalysisDisplayer = class extends TokenDisplayer {
-
-    setProperty(property, value) {
+    setStyle(property, value) {
         this.element.style.setProperty(
             property,
             value
@@ -828,7 +822,7 @@ analysisNamespace.TokenAnalysisDisplayer = class extends TokenDisplayer {
     }
 
     setColour(property, hue, saturation, lightness, alpha) {
-        this.setProperty(
+        this.setStyle(
             property,
             "hsla(" + hue + "," + saturation + "%," + lightness + "%," + alpha + ")"
         );
@@ -836,12 +830,12 @@ analysisNamespace.TokenAnalysisDisplayer = class extends TokenDisplayer {
 
     setBorderColour(alpha) {
         if (Number.isNaN(alpha) || alpha === 0) {
-            this.setProperty(
+            this.setStyle(
                 "border-left-style",
                 "none"
             );
         } else {
-            this.setProperty(
+            this.setStyle(
                 "border-left-style",
                 "solid"
             );
@@ -852,20 +846,29 @@ analysisNamespace.TokenAnalysisDisplayer = class extends TokenDisplayer {
         }
     }
 
+    getSubLeaves() {
+        let subLeaves = [];
+        if (this.children.length === 0) return this;
+        for (let subTree of this.children) {
+            subLeaves.concat(subTree.getSubLeaves());
+        }
+        return subLeaves;
+    }
+
     setTokenColour(hue) {
         let alpha;
         if (Number.isNaN(hue)) {
             alpha = 0;
             hue = 0;
             if (!this.isHighlighted) {
-                this.setProperty(
+                this.setStyle(
                     "opacity",
                     0.4
                 );
             }
         } else {
             alpha = 0.6;
-            this.setProperty(
+            this.setStyle(
                 "opacity",
                 1
             );
@@ -877,28 +880,31 @@ analysisNamespace.TokenAnalysisDisplayer = class extends TokenDisplayer {
     }
 
     highlight() {
-        this.isHighlighted = true;
-        this.setProperty(
+        if (this.isHighlighted === true) return;
+        swapValues(this, "activeOnclick", "inactiveOnclick");
+        this.setStyle(
             "opacity",
             1
         );
-        this.setProperty(
+        this.setStyle(
             "font-weight",
             "bold"
         );
-        this.setProperty(
+        this.setStyle(
             "border-bottom-style",
             "solid"
         );
     }
 
     unHighlight() {
+        if (this.isHighlighted === false) return;
         this.isHighlighted = false;
-        this.setProperty(
+        swapValues(this, "activeOnclick", "inactiveOnclick");
+        this.setStyle(
             "font-weight",
             "normal"
         );
-        this.setProperty(
+        this.setStyle(
             "border-bottom-style",
             "none"
         );
@@ -906,93 +912,144 @@ analysisNamespace.TokenAnalysisDisplayer = class extends TokenDisplayer {
 
 }
 
-analysisNamespace.TokenAnalysisDisplayerList = class extends Array {
+analysisNamespace.TokenisedText = class extends Array {
 
-    constructor(parentDiv, tokens) {
+    constructor(textArray) {
         super();
-        this.tokenDisplayerList.wordList.displayerList = tokens.map(
-            (token) => (
-                token.isIgnored?
-                new analysisNamespace.TokenDisplayer(parentDiv, token.text):
-                new analysisNamespace.TokenAnalysisDisplayer(parentDiv, token.text)
-            )
-        );
-    }
-
-    setColours(hueList, borderAlphaList) {
-        for (let i = this.length - 1; i >= 0; i--) {
-            let nextDisplayer = this[i];
-            nextDisplayer.setTokenColour(hueList[i]);
-            nextDisplayer.setBorderColour(borderAlphaList[i]);
+        // Declare variables
+        let curWordStartIndex = -1;
+        let curClauseStartIndex = -1;
+        let curSentenceStartIndex = -1;
+        let i;
+        let groupByWord = () => {
+            if (curWordStartIndex < 0) return;
+            let removedWord = textArray.splice(curWordStartIndex, i - curWordStartIndex);
+            textArray.splice(curWordStartIndex, 0, removedWord);
+            i -= i - curWordStartIndex - 1;
+            curWordStartIndex = -1;
         }
-    }
-
-    reset() {
-        for (let i = this.length - 1; i >= 0; i--) {
-            this[i].unHighlight();
-            this[i].element.onclick = (
-                () => this.displayPaths(i)
-            );
+        let groupByClause = () => {
+            if (curClauseStartIndex < 0) return;
+            groupByWord();
+            let removedClause = textArray.splice(curClauseStartIndex, i - curClauseStartIndex);
+            textArray.splice(curClauseStartIndex, 0, removedClause);
+            i -= i - curClauseStartIndex - 1;
+            curClauseStartIndex = -1;
         }
-    }
-
-    highlight(tokenIndex) {
-        this.unhighlightDisplayers();
-        this[tokenIndex].highlight();
+        let groupBySentence = () => {
+            if (curSentenceStartIndex < 0) return;
+            groupByClause();
+            let removedSentence = textArray.splice(curSentenceStartIndex, i - curSentenceStartIndex);
+            textArray.splice(curSentenceStartIndex, 0, removedSentence);
+            i -= i - curSentenceStartIndex - 1
+            curSentenceStartIndex = -1;
+        }
+        // Tokenise
+        for (i = 0; i < textArray.length; i++) {
+            let char = textArray[i];
+            if (/\w/.test(char)) {
+                if (curWordStartIndex < 0) {
+                    curWordStartIndex = i;
+                    if (curClauseStartIndex < 0) {
+                        curClauseStartIndex = i;
+                        if (curSentenceStartIndex < 0) {
+                            curSentenceStartIndex = i;
+                        }
+                    }
+                }
+                if (i === text.length - 1) {
+                    groupBySentence();
+                }
+            } else if (/\s/.test(char)) {
+                groupByWord();
+            } else if (/,|;|:|{|}|\(|\)|\[|\]/.test(char)) {
+                groupByClause();
+            } else if (/.|!|\?/.test(char)) {
+                groupBySentence();
+            }
+        }
+        this.push(...textArray);
     }
 
 }
 
 analysisNamespace.StatisticDisplayer = class {
 
-    tokenDisplayerList = {
-        charList: {
-            isActive: false
-        },
-        wordList: {
-            isActive: false
-        }
-    }
-    regressionStat;
+    displayers = {
+        sentences: [],
+        clauses: [],
+        words: [],
+        chars: []
+    };
+    currentAnalysis;
+    currentHues;
+    currentBorderAlphas;
 
-    constructor(text, readers) {
-        // Initialise text fields
-        let totalCharacters = text.length;
-        let chars = [];
-        let words = [];
-        let curWord;
-        for (let i = 0; i < totalCharacters; i++) {
-            let char = text[i];
-            chars[i] = {
-                text: char,
-                isIgnored: false
-            };
-            if (/\w/.test(char)) {
-                if (curWord === undefined) {
-                    curWord = ({
-                        text: char,
-                        isIgnored: false
-                    });
+    constructor(textArray, readers) {
+        // Make text DOM elements
+        let textArray = Array.from(text);
+        let tokenisedText = analysisNamespace.TokenisedText(textArray);
+        let charCount = 0;
+        let makeElements(tokenList, lists, parent) {
+            let parentElement = (
+                parent === undefined?
+                document.getElementById("an_text"):
+                parent.element
+            );
+            for (let token of tokenList) {
+                let tokenSpan;
+                if (Array.isArray(token)) {
+                    tokenSpan = new TokenDisplayer(parentElement, "", () => this.display(), () => this.displayPaths(lists[0].length));
+                    lists[0].push(tokenSpan);
+                    makeElements(token, tokenSpan, lists.slice(1));
                 } else {
-                    curWord.text += char;
+                    tokenSpan = new TokenDisplayer(parent, textArray.shift(), () => this.display(), () => this.displayPaths(this.displayers.chars.length));
+                    this.displayers.chars.push(tokenSpan);
                 }
-                if (i === totalCharacters - 1) words.push(curWord);
-            } else {
-                if (curWord !== undefined) {
-                    words.push(curWord);
-                    curWord = undefined;
+                if (parent !== undefined) {
+                    parent.children.push(tokenSpan);
                 }
-                words.push({
-                    text: char,
-                    isIgnored: true
-                });
             }
         }
-        this.readingManager = new analysisNamespace.ReadingManager(readers, chars, words);
+        makeElements(
+            tokenisedText,
+            [this.displayers.sentences, this.displayers.clauses, this.displayers.words, this.displayers.chars]
+        );
+        this.readingManager = new analysisNamespace.ReadingManager(chars, words, readers, token, statistic, average, filters);
         // Initialise displayers
-        let parentDiv = document.getElementById("an_display");
-        this.tokenDisplayerList.charList.displayerList = new analysisNamespace.TokenAnalysisDisplayerList(parentDiv, chars);
-        this.tokenDisplayerList.wordList.displayerList = new analysisNamespace.TokenAnalysisDisplayerList(parentDiv, words);
+        let charParentDiv = document.getElementById("an_char_display");
+        let wordParentDiv = document.getElementById("an_word_display");
+        wordParentDiv.style.display = "none";
+        this.activeDisplayerList = chars.map(
+            (char, index) => new analysisNamespace.TokenAnalysisDisplayer(
+                charParentDiv,
+                char.text,
+                () => this.displayPaths(index),
+                () => this.display()
+            )
+        );
+        this.inactiveDisplayerList = words.map(
+            (word, index) => (
+                word.isIgnored?
+                new analysisNamespace.TokenDisplayer(
+                    wordParentDiv,
+                    word.text,
+                    () => this.displayPaths(index),
+                    () => this.display()
+                ):
+                new analysisNamespace.TokenAnalysisDisplayer(
+                    wordParentDiv,
+                    word.text
+                )
+            )
+        );
+    }
+
+    changeToken(token) {
+        this.displayerList[0].element.parentElement.style.display = "inline";
+        this.inactiveDisplayerList[0].element.parentElement.style.display = "none";
+        //
+        this.readingManager.changeToken(token);
     }
 
     addReading(usernameHash, windows) {
@@ -1001,7 +1058,7 @@ analysisNamespace.StatisticDisplayer = class {
     }
 
     isRegressionStatistic(statistic) {
-        return statistic[0] === "r";
+        return this.currentStatistic[0] === "r";
         // return (
         //     statistic != "firstFixationDuration" &&
         //     statistic != "gazeDuration" &&
@@ -1010,43 +1067,48 @@ analysisNamespace.StatisticDisplayer = class {
         // );
     }
 
+    setHues(hueList) {
+        for (let i = this.activeDisplayerList.length - 1; i >= 0; i--) {
+            this.activeDisplayerList[i].setTokenColour(hueList[i]);
+        }
+    }
+
+    setBorderAlphas(borderAlphaList) {
+        for (let i = this.activeDisplayerList.length - 1; i >= 0; i--) {
+            this.activeDisplayerList[i].setBorderColour(borderAlphaList[i]);
+        }
+    }
+
     display(token, statistic, average, filters) {
-        this.regressionStat = (
-            this.isRegressionStatistic(statistic)?
-            statistic:
-            undefined
-        );
         this.resetDisplayers();
-        let tokenList = this.tokenDisplayerList[token + "List"];
-        tokenList.isActive = true;
-        let colourData = this.readingManager.getColourData(token, statistic, average, filters);
-        tokenList.displayerList.setColours(colourData);
+        let colourData = this.readingManager.getHues(token, statistic, average, filters);
+        setColours(colourData);
     }
 
     resetDisplayers() {
-        for (let tokenList of this.tokenDisplayerList) {
-            tokenList.displayerList.reset();
+        for (let i = this.length - 1; i >= 0; i--) {
+            this[i].unHighlight();
+            this[i].element.onclick = (
+                () => this.displayPaths(i)
+            );
         }
+    }
+
+    highlightDisplayer(tokenIndex) {
+        this.unhighlightDisplayers();
+        this.activeDisplayerList[tokenIndex].highlight();
     }
 
     unhighlightDisplayers() {
-        for (let tokenList of this.tokenDisplayerList) {
-            tokenList.displayerList.unhighlight();
+        for (let displayer of this.activeDisplayerList) {
+            displayer.unhighlight();
         }
     }
 
-    displayPaths(tokenIndex, regressionType, regressionStat) {
-        if (this.regressionStat === undefined) return;
+    displayPaths(tokenIndex) {
+        if (!this.isRegressionStatistic()) return;
         // Set new highlighting
-        let activeDisplayerList = (
-            this.tokenDisplayerList.charList.isActive?
-            this.tokenDisplayerList.charList.displayerList:
-            this.tokenDisplayerList.wordList.displayerList
-        );
-        activeDisplayerList.highlight(tokenIndex);
-        // Set new onclick
-        activeDisplayerList[tokenIndex].element.onclick =
-            () => this.display();
+        this.highlight(tokenIndex);
         // Get paths
         let paths = this.readingManager.getRegressionPaths(tokenIndex, regressionType, regressionStat);
         // Get path hues
