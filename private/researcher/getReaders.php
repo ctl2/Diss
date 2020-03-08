@@ -26,11 +26,15 @@
             $birthDate = date_create($readerRow["dob"]);
             $age = date_diff($readDate, $birthDate);
             // Record data
-            $readerArray[$readerRow["usernameHash"]] = array(
-                "wpm" => $readerRow["wpm"],
-                "age" => (int) date_interval_format($age, "%y"), // Get the year part without leading/trailing zeroes
-                "gender" => $readerRow["gender"],
-                "isImpaired" => (bool) $readerRow["isImpaired"]
+            array_push(
+                $readerArray,
+                array(
+                    "usernameHash" => $readerRow["usernameHash"],
+                    "wpm" => $readerRow["wpm"],
+                    "age" => (int) date_interval_format($age, "%y"), // Get the year part without leading/trailing zeroes
+                    "gender" => $readerRow["gender"],
+                    "isImpaired" => (bool) $readerRow["isImpaired"]
+                )
             );
         }
         // Return the result array
