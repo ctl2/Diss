@@ -9,10 +9,10 @@
     require_once("../lib/unboundQuery.php");
     require_once("../lib/respond.php");
 
-    function getReadings($conn, $title, $version) {
+    function getReaders($conn, $title, $version) {
         // Retrieve data on all reader accounts that have been assigned the given text
         $sql = "
-            SELECT DISTINCT SHA2(username, 224) AS usernameHash, dob, gender, isImpaired, wpm, readDate
+            SELECT DISTINCT SHA2(username, 224) AS usernameHash, dob, gender, isImpaired, wpm, innerWidth, readDate
             FROM Readers
             INNER JOIN Readings ON reader = username
             WHERE title = '$title' AND version = '$version'
@@ -30,10 +30,11 @@
                 $readerArray,
                 array(
                     "usernameHash" => $readerRow["usernameHash"],
-                    "wpm" => $readerRow["wpm"],
                     "age" => (int) date_interval_format($age, "%y"), // Get the year part without leading/trailing zeroes
                     "gender" => $readerRow["gender"],
-                    "isImpaired" => (bool) $readerRow["isImpaired"]
+                    "isImpaired" => (bool) $readerRow["isImpaired"],
+                    "wpm" => $readerRow["wpm"],
+                    "innerWidth" => $readerRow["innerWidth"]
                 )
             );
         }

@@ -164,15 +164,14 @@ class FixationTimer {
     endTimer() {
         // Record window duration data
         let measures = window.performance.getEntriesByName("");
+        let totalWindowDuration = 0;
         for (let i = 0; i < this.log.length; i++) {
-            let nextDuration = measures[i].duration;
+            let duration = measures[i].duration;
             this.log[i].duration = duration;
             totalWindowDuration += duration;
         }
         // Record whole text duration data
-        let startTime = measures[0].startTime;
-        let endTime = measures[measures.length-1].startTime + measures[measures.length-1].duration;
-        this.minutes = (endTime - startTime) / (1000 * 60); // Divide by 1000 for seconds and 60 for minutes
+        this.minutes = totalWindowDuration / (1000 * 60); // Divide by 1000 for seconds and 60 for minutes
         // Clear measurements
         window.performance.clearMeasures("");
         window.performance.clearMarks("start");
@@ -267,7 +266,7 @@ class SessionManager {
         postRequest(
             [
                 "log=" + JSON.stringify(this.session.timer.log),
-                "wpm=" + (this.session.getTotalWords() / this.session.timer.minutes)),
+                "wpm=" + (this.session.getTotalWords() / this.session.timer.minutes),
                 "innerWidth=" + window.innerWidth,
                 "innerHeight=" + window.innerHeight
             ],

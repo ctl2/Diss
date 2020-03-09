@@ -184,7 +184,7 @@
                 title VARCHAR(30) NOT NULL,
                 version VARCHAR(20) NOT NULL,
                 reader VARCHAR(20) NOT NULL,
-                readDate DATE NOT NULL,
+                readDate DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 wpm SMALLINT UNSIGNED NOT NULL,
                 innerWidth SMALLINT UNSIGNED NOT NULL,
                 innerHeight SMALLINT UNSIGNED NOT NULL,

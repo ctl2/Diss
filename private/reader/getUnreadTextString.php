@@ -7,6 +7,7 @@
 
     require_once("../lib/setHeaders.php");
     require_once("../lib/connectDB.php");
+    require_once("../lib/getVariable.php");
     require_once("../lib/unboundQuery.php");
     require_once("../lib/respond.php");
     require_once("../lib/getTextString.php");

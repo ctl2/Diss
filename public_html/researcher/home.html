@@ -13,7 +13,7 @@
                 padding-bottom: 20px;
             }
 
-            #an_display {
+            #an_text {
                 width: 800px;
             }
 
@@ -156,21 +156,23 @@
                 </div>
                 <div>
                     Average:
-                    <select id="an_average_sel" onchange="readingManager.updateDisplay()">
+                    <select id="an_average_sel" onchange="analysisInterface.statisticDisplayer.changeAverage(this.value)">
                         <option value="mean">Mean</option>
                         <option value="median">Median</option>
                     </select>
                 </div>
                 <div>
                     Token:
-                    <select id="an_token_sel" onchange="readingManager.updateDisplay()">
+                    <select id="an_token_sel" onchange="analysisInterface.statisticDisplayer.changeToken(this.value)">
                         <option value="char">Character</option>
                         <option value="word">Word</option>
+                        <option value="clause">Clause</option>
+                        <option value="sentence">Sentence</option>
                     </select>
                 </div>
                 <div>
                     Statistic:
-                    <select id="an_statistic_sel" onchange="readingManager.updateDisplay()">
+                    <select id="an_statistic_sel" onchange="analysisInterface.statisticDisplayer.changeStatistic(this.value)">
                         <option value="gazeDuration">Gaze Duration</option>
                         <option value="firstFixationDuration">First-Fixation Duration</option>
                         <option value="spilloverTime">Spillover Time</option>
@@ -183,7 +185,7 @@
                 </div>
                 <div>
                     Gender:
-                    <select id="an_gender_sel" onchange="readingManager.updateDisplay()">
+                    <select id="an_gender_sel" onchange="analysisInterface.statisticDisplayer.changeFilter('gender', this.value)">
                         <option value="all">All</option>
                         <option value="m">Male</option>
                         <option value="f">Female</option>
@@ -191,15 +193,23 @@
                 </div>
                 <div>
                     Reading Impairment:
-                    <select id="an_impairment_sel" onchange="readingManager.updateDisplay()">
+                    <select id="an_impairment_sel" onchange="analysisInterface.statisticDisplayer.changeFilter('impairment', this.value)">
                         <option value="all">All</option>
                         <option value="y">Only Impaired</option>
                         <option value="n">Only Non-Impaired</option>
                     </select>
                 </div>
                 <div>
-                    Minimum age: <input id="an_min_age_sel" type="number" min="0" max="255" value="0" onchange="readingManager.updateDisplay()" />
-                    Maximum age: <input id="an_max_age_sel" type="number" min="0" max="255" value="255" onchange="readingManager.updateDisplay()" />
+                    Minimum age: <input id="an_min_age" type="number" min="0" max="255" value="0" onchange="analysisInterface.statisticDisplayer.changeFilter('minAge', this.value)" />
+                    Maximum age: <input id="an_max_age" type="number" min="0" max="255" value="255" onchange="analysisInterface.statisticDisplayer.changeFilter('maxAge', this.value)" />
+                </div>
+                <div>
+                    Minimum Words Per Minute: <input id="an_min_wpm" type="number" min="0" max="500" value="0" onchange="analysisInterface.statisticDisplayer.changeFilter('minWPM', this.value)" />
+                    Maximum Words Per Minute: <input id="an_max_wpm" type="number" min="0" max="500" value="500" onchange="analysisInterface.statisticDisplayer.changeFilter('maxWPM', this.value)" />
+                </div>
+                <div>
+                    Minimum Screen Width: <input id="an_min_inner_width" type="number" min="0" max="2000" value="0" onchange="analysisInterface.statisticDisplayer.changeFilter('minInnerWidth', this.value)" />
+                    Maximum Screen Width: <input id="an_max_inner_width" type="number" min="0" max="2000" value="2000" onchange="analysisInterface.statisticDisplayer.changeFilter('maxInnerWidth', this.value)" />
                 </div>
                 <input type="button" onclick="readingManager.download(false)" value="Download JSON" />
                 <input type="button" onclick="readingManager.download(true)" value="Download CSV" />

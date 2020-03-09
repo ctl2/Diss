@@ -4,7 +4,7 @@
 
     error_reporting(E_ALL);
     ini_set('display_errors', 1);
-    
+
     require_once("../lib/setHeaders.php");
     require_once("../lib/connectDB.php");
     require_once("../lib/getVariable.php");
@@ -43,7 +43,7 @@
 
     $title = getSessionVar("title");
     $version = getSessionVar("version");
-    $username = getSessionVar("username");
+    $reader = getSessionVar("username");
     $wpm = getPostVar("wpm");
     $innerWidth = getPostVar("innerWidth");
     $innerHeight = getPostVar("innerHeight");
@@ -51,7 +51,7 @@
     // Group all queries into a single transaction
     if (!$conn->autocommit(false)) respond(false, "Failed to start transaction: $conn->error");
 
-    createReadingEntry($conn, $title, $version, $reader, $wpm, $availWidth, $availHeight);
+    createReadingEntry($conn, $title, $version, $reader, $wpm, $innerWidth, $innerHeight);
     createLogEntry($conn, $title, $version, $reader, $log);
 
     if (!$conn->commit()) respond(false, "Commit failed: $conn->error");
