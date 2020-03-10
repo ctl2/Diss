@@ -20,6 +20,7 @@
             .token {
                 border-width: 5px;
                 font: 20px lucida-console, monospace;
+                font-weight: inherit;
             }
 
         </style>
@@ -35,6 +36,8 @@
         <script type="text/javascript" src="javascript/divs/filter.js"></script>
         <script type="text/javascript" src="javascript/divs/upload.js"></script>
         <script type="text/javascript" src="javascript/divs/viewDetails.js"></script>
+        <script type="text/javascript" src="../../node_modules/jszip/dist/jszip.js"></script>
+        <script type="text/javascript" src="../../node_modules/file-saver/dist/FileSaver.js"></script>
         <script type="text/javascript" src="javascript/divs/analyse.js"></script>
         <script type="text/javascript" src="javascript/divs/compare.js"></script>
         <script type="text/javascript" src="javascript/controlTextTable.js" defer></script>
@@ -211,8 +214,8 @@
                     Minimum Screen Width: <input id="an_min_inner_width" type="number" min="0" max="2000" value="0" onchange="analysisInterface.statisticDisplayer.changeFilter('minInnerWidth', this.value)" />
                     Maximum Screen Width: <input id="an_max_inner_width" type="number" min="0" max="2000" value="2000" onchange="analysisInterface.statisticDisplayer.changeFilter('maxInnerWidth', this.value)" />
                 </div>
-                <input type="button" onclick="readingManager.download(false)" value="Download JSON" />
-                <input type="button" onclick="readingManager.download(true)" value="Download CSV" />
+                <input type="button" onclick="analysisInterface.download(false)" value="Download JSON" />
+                <input type="button" onclick="analysisInterface.download(true)" value="Download CSV" />
 
                 <br><br>
 

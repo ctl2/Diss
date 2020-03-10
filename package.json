@@ -1,0 +1,23 @@
+{
+  "name": "mcr",
+  "version": "1.0.0",
+  "description": "An online platform for Mouse-Contingent Reading data collection and analysis.",
+  "main": "public_html/login/login.html",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ctl2/Diss.git"
+  },
+  "author": "Callum Latham",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/ctl2/Diss/issues"
+  },
+  "homepage": "https://github.com/ctl2/Diss#readme",
+  "dependencies": {
+    "file-saver": "^2.0.2",
+    "jszip": "^3.2.2"
+  }
+}

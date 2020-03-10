@@ -1,28 +1,45 @@
+'use-strict';
+
 var analysisNamespace = {};
 
-analysisNamespace.SortedList = class extends Array {
+analysisNamespace.SortedNumberList = class extends Array {
+
+    constructor() {
+        super();
+    }
 
     // O(log(n)) complexity search algorithm
-    getInsertionIndex(item, list = this) {
+    getIndex(number, list = this) {
         if (list.length === 0) return 0;
         let nextIndex = Math.floor(list.length / 2);
-        let nextItem = list[nextIndex];
-        if (this.areEqual(item, nextItem)) {
+        let nextNumber = list[nextIndex];
+        if (number === nextNumber) {
             return nextIndex;
+        } else if (number > nextNumber) {
+            return nextIndex + 1 + this.getIndex(number, list.slice(nextIndex + 1));
         } else {
-            let number = this.getNumber(item);
-            let nextNumber = this.getNumber(nextItem);
-            if (number > nextNumber) {
-                return nextIndex + 1 + this.getInsertionIndex(number, list.slice(nextIndex + 1));
-            } else {
-                return 0 + this.getInsertionIndex(number, list.slice(0, nextIndex));
-            }
+            return 0 + this.getIndex(number, list.slice(0, nextIndex));
         }
     }
 
-    insert(item) {
-        let index = this.getInsertionIndex(item);
-        this.splice(index, 0, item);
+    insert(number) {
+        let index = this.getIndex(number);
+        this.splice(index, 0, number);
+    }
+
+    remove(number) {
+        let index = this.getIndex(number);
+        if (this[index] === number) {
+            this.splice(index, 1);
+            return true;
+        }
+        return false;
+    }
+
+    contains(number) {
+        let index = this.getIndex(number);
+        if (this[index] === number) return true;
+        return false;
     }
 
     removeSmallest() {
@@ -35,104 +52,18 @@ analysisNamespace.SortedList = class extends Array {
 
     getSum() {
         return this.reduce(
-            (total, item) => total + this.getNumber(item)
+            (total, curNumber) => total + curNumber
         );
     }
 
-    getAverage(average) {
-        if (this.length === 0) return NaN;
-        let averageMethod = "get" + average[0].toUpperCase() + average.slice(1);
-        return this[averageMethod]();
-    }
-
-}
-
-analysisNamespace.SortedNumberList = class extends analysisNamespace.SortedList {
-
-    getNumber(number) {
-        return number;
-    }
-
-    areEqual(number1, number2) {
-        return number1 === number2;
-    }
-
-    contains(number) {
-        let index = this.getInsertionIndex(number);
-        if (this.areEqual(number, this[index])) return true;
-        return false;
-    }
-
-    remove(number) {
-        let index = this.getInsertionIndex(number);
-        if (this.areEqual(number, this[index])) {
-            this.splice(index, 1);
-            return true;
-        }
-        return false;
-    }
-
     getMedian() {
-        return this.getNumber(this[Math.floor(this.length / 2)]);
+        return this[Math.floor(this.length / 2)];
     }
 
     getMean() {
         return (this.length === 0)?
             0:
             this.getSum() / (this.length);
-    }
-
-}
-
-analysisNamespace.SortedObjectList = class extends analysisNamespace.SortedList {
-
-    constructor(numberKey) {
-        super();
-        this.numberKey = numberKey;
-    }
-
-    insert(object, id) {
-        super.insert({
-            id: id,
-            value: object[this.numberKey]
-        });
-    }
-
-    getNumber(object) {
-        return object[this.numberKey];
-    }
-
-    areEqual(object1, object2) {
-        return object1[idKey] == object2[idKey];
-    }
-
-    contains(id) {
-        for (let objectCount = 0; objectCount < this.length; objectCount++) {
-            if (id === this[objectCount][this.idKey]) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    remove(id) {
-        for (let objectCount = 0; objectCount < this.length; objectCount++) {
-            if (id === this[objectCount][this.idKey]) {
-                this.splice(objectCount, 1);
-                return true;
-            }
-        }
-        return false;
-    }
-
-    getMedian() {
-        return this.getNumber(this[Math.floor(idList.length / 2)]);
-    }
-
-    getMean() {
-        return this.reduce(
-            (total, object) => total + this.getNumber(object)
-        ) / this.length;
     }
 
 }
@@ -304,7 +235,7 @@ analysisNamespace.Regression = class {
 
 }
 
-analysisNamespace.RegressionSet = class extends Array {
+analysisNamespace.RegressionSet = class {
 
     addRegressionSet(regressionSet) {
         for (let otherChar in regressionSet) {
@@ -503,13 +434,19 @@ analysisNamespace.CharacterAnalysis = class {
                 (total, fixation) => total + fixation.gazeDuration,
                 0
             );
-            this.regressionsOutCount = character.regressionsOut.length;
-            this.regressionsOutTime = character.regressionsOut.reduce(
+            this.regressionsOutCount = Object.values(character.regressionsOut).reduce(
+                (total, regressionOut) => total + regressionOut.count,
+                0
+            );
+            this.regressionsOutTime = Object.values(character.regressionsOut).reduce(
                 (total, regressionOut) => total + regressionOut.pathDuration,
                 0
             );
-            this.regressionsInCount = character.regressionsIn.length;
-            this.regressionsInTime = character.regressionsIn.reduce(
+            this.regressionsInCount = Object.values(character.regressionsOut).reduce(
+                (total, regressionOut) => total + regressionOut.count,
+                0
+            );
+            this.regressionsInTime = Object.values(character.regressionsIn).reduce(
                 (total, regressionIn) => total + regressionIn.pathDuration,
                 0
             );
@@ -674,46 +611,23 @@ analysisNamespace.TextAnalysisList = class extends Array {
         );
     }
 
-    getHues(statistic, average) {
-        let averageList = [...this].map(
-            (char) => char.statistics[statistic].getAverage(average)
+    getRegressionTotals(charIndexList, regressionType, regressionStat) {
+        let regressions = charIndexList.reduce(
+            (total, index) => {
+                total.addRegressionSet(this[index][regressionType]);
+                return total;
+            },
+            new analysisNamespace.RegressionSet()
         );
-        return new analysisNamespace.RatioList(
-            averageList,
-            0, // Red
-            120, // Green
-            true // Reverse since small values should be green and large values red
-        );
-    }
-
-    getBorderAlphas() {
-        let averageList = [...this].map(
-            (char) => char.statistics.isLineStart.getMean()
-        );
-        return new analysisNamespace.RatioList(
-            averageList,
-            0, // transparent
-            1, // opaque
-            false
-        );
-    }
-
-    getRegressionPathHues(tokenIndex, regressionType, regressionStat) {
-        let regressions = this[tokenIndex][regressionType];
-        let paths = [];
+        let totals = [];
         for (let i = 0; i < this.length; i++) {
-            paths[i] = (
+            totals[i] = (
                 !regressions.hasOwnProperty(i)?
                 0:
                 regressions[i][regressionStat]
             );
         }
-        return new analysisNamespace.RatioList(
-            paths,
-            0, // Red
-            120, // Green
-            true // Reverse since low values should be green and vice versa
-        );
+        return totals;
     }
 
 }
@@ -741,6 +655,12 @@ analysisNamespace.ReadingManager = class {
         return false;
     }
 
+    getRelevantReaders() {
+        return this.readers.filter(
+            (reader) => reader.isWithinGroup(...Object.values(this.filters)) && reader.hasOwnProperty("textAnalysis")
+        );
+    }
+
     getNewTextAnalysis() {
         let newAnalysisList = new analysisNamespace.TextAnalysisList(this.textLength);
         for (let reader of this.readers) {
@@ -761,14 +681,12 @@ analysisNamespace.DisplayerTree = class {
 
     isHighlighted = false;
 
-    constructor(parentElement, text, highlightedOnclick, unHighlightedOnclick) {
+    constructor(parentElement, unhighlightedOnclick, highlightedOnclick) {
         this.element = document.createElement("span");
         this.element.classList.add("token");
-        this.element.innerText = text;
         parentElement.appendChild(this.element);
-        this.activeOnclick = () => unhighlightedOnclick(this);
-        this.inactiveOnclick = () => highlightedOnclick(this);
-        this.element.onclick = this.activeOnclick;
+        this.unhighlightedOnclick = () => unhighlightedOnclick(this);
+        this.highlightedOnclick = () => highlightedOnclick();
     }
 
     getLeaves() {
@@ -836,16 +754,10 @@ analysisNamespace.DisplayerTree = class {
         );
     }
 
-    reset() {
-        this.unHighlight();
-        this.setHue(NaN);
-        this.setBorderAlpha(NaN);
-    }
-
     highlight() {
         if (this.isHighlighted === true) return;
+        this.isHighlighted = true;
         this.element.onclick = this.highlightedOnclick;
-        swapValues(this, "activeOnclick", "inactiveOnclick");
         this.setStyle(
             "opacity",
             1
@@ -860,11 +772,10 @@ analysisNamespace.DisplayerTree = class {
         );
     }
 
-    unHighlight() {
+    unhighlight() {
         if (this.isHighlighted === false) return;
         this.isHighlighted = false;
-        this.element.onclick = this.unHighlightedOnclick;
-        swapValues(this, "activeOnclick", "inactiveOnclick");
+        this.element.onclick = this.unhighlightedOnclick;
         this.setStyle(
             "font-weight",
             "normal"
@@ -877,9 +788,17 @@ analysisNamespace.DisplayerTree = class {
 
 }
 
-analysisNamespace.DisplayerTreeRoot = class extends Array {
+analysisNamespace.DisplayerLeaf = class extends analysisNamespace.DisplayerTree {
 
-    maxDepth = 4;
+    constructor(parentElement, unhighlightedOnclick, highlightedOnclick, text, index) {
+        super(parentElement, unhighlightedOnclick, highlightedOnclick);
+        this.element.innerText = text;
+        this.index = index;
+    }
+
+}
+
+analysisNamespace.DisplayerTreeRoot = class extends Array {
 
     constructor(text, onclick1, onclick2) {
         super();
@@ -889,31 +808,33 @@ analysisNamespace.DisplayerTreeRoot = class extends Array {
             /,|;|:|{|}|\(|\)|\[|\]/,
             /\s/
         ];
-        let formSubTree = (parentElement, parentText = text, depth = 0) => {
+        let formSubTree = (parentElement, tokenStartIndex = 0, tokenEndIndex = text.length, depth = 0) => {
             let displayerArray = [];
             let ender = tokenEnders[depth];
-            let curToken = "";
-            for (let char of parentText) {
+            let isTracingToken = false;
+            for (let i = tokenStartIndex; i < tokenEndIndex; i++) {
+                let char = text[i];
                 if (/\w/.test(char) && ender !== undefined) {
-                    curToken += char;
+                    if (!isTracingToken) {
+                        tokenStartIndex  = i;
+                        isTracingToken = true;
+                    }
                 } else {
-                    if (curToken === "") {
-                        displayerArray.push(new analysisNamespace.DisplayerTree(parentElement, char, onclick1, onclick2));
+                    if (!isTracingToken) {
+                        displayerArray.push(new analysisNamespace.DisplayerLeaf(parentElement, onclick1, onclick2, char, i));
                     } else if (ender.test(char)) {
                         // Recursion case
-                        let tokenDisplayer = new analysisNamespace.DisplayerTree(parentElement, "", onclick1, onclick2);
-                        tokenDisplayer.children = formSubTree(tokenDisplayer.element, curToken, depth + 1);
+                        let tokenDisplayer = new analysisNamespace.DisplayerTree(parentElement, onclick1, onclick2);
+                        tokenDisplayer.children = formSubTree(tokenDisplayer.element, tokenStartIndex, i, depth + 1);
                         displayerArray.push(tokenDisplayer);
-                        displayerArray.push(new analysisNamespace.DisplayerTree(parentElement, char, onclick1, onclick2));
-                        curToken = "";
-                    } else {
-                        curToken += char;
+                        displayerArray.push(new analysisNamespace.DisplayerLeaf(parentElement, onclick1, onclick2, char, i));
+                        isTracingToken = false;
                     }
                 }
             }
-            if (curToken !== "") {
-                let tokenDisplayer = new analysisNamespace.DisplayerTree(parentElement, "", onclick1, onclick2);
-                tokenDisplayer.children = formSubTree(tokenDisplayer.element, curToken, depth + 1);
+            if (isTracingToken) {
+                let tokenDisplayer = new analysisNamespace.DisplayerTree(parentElement, onclick1, onclick2);
+                tokenDisplayer.children = formSubTree(tokenDisplayer.element, tokenStartIndex, tokenEndIndex, depth + 1);
                 displayerArray.push(tokenDisplayer);
             }
             return displayerArray;
@@ -931,55 +852,85 @@ analysisNamespace.DisplayerTreeRoot = class extends Array {
         return leaves;
     }
 
-    getDisplayers(depth, displayerList = [...this]) {
+    getDisplayers(depth, includeLeaves, displayerList = [...this]) {
         if (depth === -1) {
             // Return all leaves (chars)
             return this.getLeaves();
         }
-        // Only return nodes with children (reject leaves)
-        let branches = displayerList.filter(
-            (displayer) => displayer.hasOwnProperty("children")
-        );
-        return (
-            depth === 0?
-            branches:
-            branches.reduce(
-                (displayers, branch) => displayers.concat(this.getDisplayers(depth - 1, branch.children)),
-                []
+        // Return all nodes
+        if (depth === 0) return (
+            includeLeaves?
+            displayerList:
+            displayerList.filter(
+                (displayer) => displayer.hasOwnProperty("children")
             )
         );
-    }
-
-    resetDisplayers(depth) {
-        for (let displayer of this.getDisplayers(depth)) {
-            displayer.reset();
-        }
-    }
-
-    setHues(depth, hues, deriveHue, nextHueIndex = 0, displayers = this) {
-        if (depth === -1) {
-            this.getLeaves().forEach(
-                (leaf, index) => leaf.setHue(hues[index])
-            );
-        } else {
-            for (let displayer of displayers) {
-                if (displayer.hasOwnProperty("children")) {
-                    if (depth === 0) {
-                        let totalChildChars = displayer.getLeaves().length;
-                        let childHues = [...hues].slice(nextHueIndex, nextHueIndex + totalChildChars);
-                        displayer.setHue(deriveHue(childHues));
-                        nextHueIndex += totalChildChars;
-                    } else {
-                        this.setHues(depth - 1, hues, deriveHue, nextHueIndex, displayer.children);
-                    }
-                } else {
-                    nextHueIndex++;
-                }
+        // Recurse on all nodes
+        let displayers = [];
+        for (let branch of displayerList) {
+            if (branch.hasOwnProperty("children")) {
+                displayers.push(...this.getDisplayers(depth - 1, includeLeaves, branch.children));
+            } else {
+                if (includeLeaves) displayers.push(branch);
             }
         }
+        return displayers;
     }
 
-    setBorderAlphas(borderAlphas) {
+    resetHues(depth) {
+        let displayers = this.getDisplayers(depth, false);
+        for (let displayer of displayers) {
+            displayer.setHue(NaN);
+            displayer.element.onclick = null;
+            displayer.setStyle(
+                "opacity",
+                1
+            );
+        }
+    }
+
+    setHues(depth, averages, deriveValue) {
+        let displayers = this.getDisplayers(depth, true);
+        let usedDisplayers = [];
+        let tokenisedAverages = [];
+        let nextIndex = 0;
+        for (let displayer of displayers) {
+            if (displayer.hasOwnProperty("children") || depth === -1) {
+                usedDisplayers.push(displayer);
+                let totalChildChars = displayer.getLeaves().length;
+                let childAverages = [...averages].slice(nextIndex, nextIndex + totalChildChars);
+                tokenisedAverages.push(deriveValue(childAverages));
+                nextIndex += totalChildChars;
+            } else {
+                displayer.setHue(NaN);
+                nextIndex++;
+            }
+        }
+        let hues = new analysisNamespace.RatioList(
+            tokenisedAverages,
+            0, // Red
+            120, // Green
+            true // Reverse since small values should be green and large values red
+        );
+        for (let i = usedDisplayers.length - 1; i >= 0; i--) {
+            if (!usedDisplayers[i].isHighlighted) usedDisplayers[i].element.onclick = usedDisplayers[i].unhighlightedOnclick;
+            usedDisplayers[i].setHue(hues[i]);
+        }
+    }
+
+    resetBorderAlphas(depth) {
+        this.getLeaves().forEach(
+            (leaf) => leaf.setBorderAlpha(NaN)
+        );
+    }
+
+    setBorderAlphas(borderAverages) {
+        let borderAlphas = new analysisNamespace.RatioList(
+            borderAverages,
+            0, // transparent
+            1, // opaque
+            false
+        );
         this.getLeaves().forEach(
             (leaf, index) => leaf.setBorderAlpha(borderAlphas[index])
         );
@@ -989,7 +940,7 @@ analysisNamespace.DisplayerTreeRoot = class extends Array {
 
 analysisNamespace.StatisticDisplayer = class {
 
-    depth = -1;
+    depth = this.getDepth(document.getElementById("an_token_sel").value);
     statistic = document.getElementById("an_statistic_sel").value;
     average = document.getElementById("an_average_sel").value;
     filters = {
@@ -1005,23 +956,29 @@ analysisNamespace.StatisticDisplayer = class {
 
     constructor(text, readers) {
         // Make text DOM elements
-        this.displayerTree = new analysisNamespace.DisplayerTreeRoot(text, this.displayPaths, this.setHues);
+        this.displayerTree = new analysisNamespace.DisplayerTreeRoot(
+            text,
+            (displayer) => this.displayPaths(displayer),
+            () => this.setHues()
+        );
         this.readingManager = new analysisNamespace.ReadingManager(text.length, readers, this.filters);
     }
 
-    setHues(displayer) {
+    setHues() {
         //this.displayerTree.resetDisplayers();
-        if (displayer !== undefined) displayer.unHighlight();
-        this.displayerTree.setHues(this.depth, this.currentTextAnalysis.getHues(this.statistic, this.average), this.getHueDeriver());
+        if (this.highlightedDisplayer !== undefined) {
+            this.highlightedDisplayer.unhighlight();
+            this.highlightedDisplayer = undefined;
+        }
+        this.displayerTree.setHues(this.depth, this.currentTextAnalysis.getAverage(this.statistic, this.average), this.getValueDeriver());
     }
 
     setBorderAlphas() {
-        this.displayerTree.setBorderAlphas(this.currentTextAnalysis.getBorderAlphas());
+        this.displayerTree.setBorderAlphas(this.currentTextAnalysis.getAverage("isLineStart", "mean"));
     }
 
-    changeToken(token) {
-        this.displayerTree.resetDisplayers(this.depth);
-        this.depth = (
+    getDepth(token) {
+        return (
             token === "char"? // Most inclusive
             -1:
             token === "sentence"?
@@ -1032,11 +989,15 @@ analysisNamespace.StatisticDisplayer = class {
             2:
             undefined
         );
+    }
+
+    changeToken(token) {
+        this.displayerTree.resetHues(this.depth);
+        this.depth = this.getDepth(token);
         this.setHues();
     }
 
     changeStatistic(statistic) {
-        this.resetDisplayers();
         this.statistic = statistic;
         this.setHues();
     }
@@ -1047,6 +1008,7 @@ analysisNamespace.StatisticDisplayer = class {
     }
 
     changeFilter(filterName, filterValue) {
+        this.displayerTree.resetResetBorderAlphas(this.depth);
         this.readingManager.changeFilter(filterName, filterValue);
         this.currentTextAnalysis = this.readingManager.getNewTextAnalysis();
         this.setHues();
@@ -1061,30 +1023,51 @@ analysisNamespace.StatisticDisplayer = class {
         }
     }
 
-    isRegressionStatistic(statistic) {
-        return this.statistic[0] === "r";
-    }
-
-    getHueDeriver() {
+    getValueDeriver() {
         switch (this.statistic) {
             case "firstFixationDuration":
-                return (hueList) => hueList[0];
+                return (averages) => averages[0];
             case "spilloverTime":
-                return (hueList) => hueList[hueList.length - 1];
+                return (averages) => averages[averages.length - 1];
             default:
-                return (hueList) =>
-                hueList.reduce(
-                    (total, hue) => total + hue
-                ) / hueList.length;
+                return (
+                    (averages) => averages.reduce(
+                        (total, average) => total + average
+                    ) / averages.length
+                );
         }
     }
 
+    getRegressionStat() {
+        if (this.statistic[0] !== "r") return false;
+        return {
+            type: (
+                this.statistic[11] === "I"?
+                "regressionsIn":
+                "regressionsOut"
+            ),
+            measure: (
+                this.statistic[this.statistic.length-1] === "e"?
+                "pathDuration":
+                "count"
+            )
+        };
+    }
+
     displayPaths(displayer) {
-        if (!this.isRegressionStatistic()) return;
+        let regressionStat = this.getRegressionStat();
+        if (!regressionStat) return;
+        if (this.highlightedDisplayer !== undefined) {
+            this.highlightedDisplayer.unhighlight();
+        }
+        this.highlightedDisplayer = displayer;
         // Set new highlighting
         displayer.highlight();
         // Set hues
-        this.displayerTree.setHues(this.depth, this.currentTextAnalysis.getRegressionPathHues(tokenIndex, regressionType, regressionStat), this.getHueDeriver());
+        let subChars = displayer.getLeaves().map(
+            (leaf) => leaf.index
+        );
+        this.displayerTree.setHues(this.depth, this.currentTextAnalysis.getRegressionTotals(subChars, regressionStat.type, regressionStat.measure), this.getValueDeriver());
     }
 
 }
@@ -1115,6 +1098,10 @@ analysisNamespace.ProgressDisplayer = class {
 analysisNamespace.InterfaceManager = class {
 
     constructor(title, version) {
+        this.textInfo = {
+            title: title,
+            version: version
+        };
         // Define a recursive helper function for asynchronous requests for reading data
         let addReadings = (readers, curIndex = 0) => {
             if (curIndex < readers.length) {
@@ -1162,39 +1149,74 @@ analysisNamespace.InterfaceManager = class {
         );
     }
 
-    getFileContents(asCSV) {
-        let analyses = this.analysesDisplayer.tokenAnalyses;
-        if (!asCSV) return JSON.stringify(analyses);
-        let csv = [];
-        for (let lineCount = 0; lineCount < json.length; lineCount++) {
-            let analysis = json[lineCount];
-            let csvLine = [];
-            let reader = json.
-            csv.push(csvLine.toString());
+    getFiles(asCSV) {
+        let readers = this.statisticDisplayer.readingManager.getRelevantReaders();
+        if (!asCSV) return [{
+            name: "readings.json",
+            text: JSON.stringify(readers)
+        }];
+        // Make CSV files
+        let readerCSV = [["usernameHash", "gender", "age", "isImpaired"]];
+        let readingCSV = [["usernameHash", "wpm", "innerWidth"]];
+        let charCSV = [["usernameHash", "charIndex", "isLineStart", "firstFixationDuration", "gazeDuration", "spilloverTime", "totalReadingTime", "regressionsOutCount", "regressionsOutTime", "regressionsInCount", "regressionsInTime"]];
+        for (let reader of readers) {
+            let readerLine = [];
+            for (let heading of readerCSV[0]) {
+                readerLine.push(reader[heading]);
+            }
+            let readingLine = [];
+            for (let heading of readingCSV[0]) {
+                readingLine.push(reader[heading]);
+            }
+            let usernameHash = reader.usernameHash;
+            reader.textAnalysis.forEach(
+                (charAnalysis, index) => {
+                    let charLine = [];
+                    for (let heading of charCSV[0]) {
+                        charLine.push(
+                            heading === "usernameHash"?
+                            usernameHash:
+                            heading === "charIndex"?
+                            index:
+                            charAnalysis[heading]
+                        );
+                    }
+                    charCSV.push(charLine.toString());
+                }
+            );
+            readerCSV.push(readerLine.toString());
+            readingCSV.push(readingLine.toString());
         }
-        return JSON.stringify(csv.join("\n"));
+        readerCSV[0] = readerCSV[0].toString();
+        readingCSV[0] = readingCSV[0].toString();
+        charCSV[0] = charCSV[0].toString();
+        return [
+            {
+                name: "readers.csv",
+                text: readerCSV.join("\n")
+            },
+            {
+                name: "readings.csv",
+                text: readingCSV.join("\n")
+            },
+            {
+                name: "analyses.csv",
+                text: charCSV.join("\n")
+            }
+        ];
     }
 
-    // Adapted from https://ourcodeworld.com/articles/read/189/how-to-create-a-file-and-generate-a-download-with-javascript-in-the-browser-without-a-server
     download(asCSV) {
         // Get the contents of the file to be downloaded
-        let fileContents = getFileContents(asCSV);
-        // Add a hidden download link to the document
-        var downloadLink = document.createElement('a');
-        downloadLink.setAttribute(
-            'href',
-            'data:text/plain;charset=utf-8,' + encodeURIComponent(fileContents)
+        let zip = new JSZip();
+        let fileContents = this.getFiles(asCSV);
+        for (let file of fileContents) {
+            zip.file(file.name, file.text);
+        }
+        zip.generateAsync({type:"blob"}).then(
+            (blob) => saveAs(blob, this.textInfo.title + "[" + this.textInfo.version + "] - " + new Date().toLocaleDateString() + ".zip")
         );
-        downloadLink.setAttribute('download', filename);
-        downloadLink.style.display = 'none';
-        document.body.appendChild(downloadLink);
-        // Trigger the download
-        downloadLink.click();
-        // Remove the link from the document
-        document.body.removeChild(downloadLink);
     }
-
-
 
 }
 
