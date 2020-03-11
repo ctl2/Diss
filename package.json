@@ -18,6 +18,7 @@
   "homepage": "https://github.com/ctl2/Diss#readme",
   "dependencies": {
     "file-saver": "^2.0.2",
-    "jszip": "^3.2.2"
+    "jszip": "^3.2.2",
+    "nouislider": "^14.1.1"
   }
 }

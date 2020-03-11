@@ -7,14 +7,132 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+        <link rel="stylesheet" type="text/css" href="../../node_modules/nouislider/distribute/nouislider.min.css">
         <style>
 
             #top {
                 padding-bottom: 20px;
             }
 
+            #middle {
+                width: 100%;
+            }
+
+            .clearfix::after {
+              content: "";
+              clear: both;
+              display: table;
+            }
+
+            .container {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: stretch;
+                justify-content: center;
+            }
+
+            #an {
+                max-width: 1200px;
+                margin: auto;
+                font-family: 'Lucida Sans Unicode', 'Lucida Grande', sans-serif;
+            }
+
             #an_text {
-                width: 800px;
+                padding-left: 50px;
+                padding-right: 40px;
+            }
+
+            .container hr {
+                width: 100%;
+                margin: 30px;
+            }
+
+            .contained {
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            tr:hover {
+                background-color: #f5f5f5;
+            }
+
+            td {
+                padding: 12px;
+            }
+
+            .slider {
+                font-size: 15px;
+                width: 480px;
+                padding-top: 2px;
+                padding-left: 10px;
+                padding-right: 10px;
+            }
+
+            .slider:hover {
+                background-color: #f5f5f5;
+            }
+
+            .noUi-value-horizontal {
+                top: 6px;
+            }
+
+            .noUi-target {
+                font-size: 13px;
+                background-color: light-grey;
+                margin-top: 10px;
+                margin-left: 20px;
+                margin-right: 20px;
+                border-radius: 2px;
+            }
+
+            .option select {
+                width: 100%;
+            }
+
+            .noUi-connect {
+                background-color: lime;
+            }
+
+            .noUi-horizontal {
+                height: 14px;
+            }
+
+            .noUi-horizontal .noUi-handle {
+                height: 24px;
+            }
+
+            .noUi-handle:after, .noUi-handle:before {
+                height: 10px;
+            }
+
+            .noUi-marker-horizontal.noUi-marker-large {
+                height: 12px;
+            }
+
+            .noUi-pips-horizontal {
+                padding: 0px;
+                height: 32px;
+            }
+
+            .download {
+                text-align: center;
+                font-size: 18px;
+                font-family: Tahoma, Geneva, sans-serif;
+                padding: 10px;
+                padding-left: 15px;
+                padding-right: 15px;
+                border-radius: 5px;
+                background-color: #98deb7bf;
+                border-color: #a5e6d1;
+            }
+
+            .download:hover {
+                background-color: #69ad87bf;
+                border-color: #6c9e8e;
+            }
+
+            select {
+                font-size: 16px;
             }
 
             .token {
@@ -36,6 +154,7 @@
         <script type="text/javascript" src="javascript/divs/filter.js"></script>
         <script type="text/javascript" src="javascript/divs/upload.js"></script>
         <script type="text/javascript" src="javascript/divs/viewDetails.js"></script>
+        <script type="text/javascript" src="../../node_modules/nouislider/distribute/nouislider.min.js"></script>
         <script type="text/javascript" src="../../node_modules/jszip/dist/jszip.js"></script>
         <script type="text/javascript" src="../../node_modules/file-saver/dist/FileSaver.js"></script>
         <script type="text/javascript" src="javascript/divs/analyse.js"></script>
@@ -157,69 +276,96 @@
                 <div>
                     <h2 id="an_title"></h2> <h2 id="an_version"></h2>
                 </div>
-                <div>
-                    Average:
-                    <select id="an_average_sel" onchange="analysisInterface.statisticDisplayer.changeAverage(this.value)">
-                        <option value="mean">Mean</option>
-                        <option value="median">Median</option>
-                    </select>
-                </div>
-                <div>
-                    Token:
-                    <select id="an_token_sel" onchange="analysisInterface.statisticDisplayer.changeToken(this.value)">
-                        <option value="char">Character</option>
-                        <option value="word">Word</option>
-                        <option value="clause">Clause</option>
-                        <option value="sentence">Sentence</option>
-                    </select>
-                </div>
-                <div>
-                    Statistic:
-                    <select id="an_statistic_sel" onchange="analysisInterface.statisticDisplayer.changeStatistic(this.value)">
-                        <option value="gazeDuration">Gaze Duration</option>
-                        <option value="firstFixationDuration">First-Fixation Duration</option>
-                        <option value="spilloverTime">Spillover Time</option>
-                        <option value="totalReadingTime">Total Reading Time</option>
-                        <option value="regressionsInCount">Regressions In (quantity)</option>
-                        <option value="regressionsInTime">Regressions In (time)</option>
-                        <option value="regressionsOutCount">Regressions Out (quantity)</option>
-                        <option value="regressionsOutTime">Regressions Out (time)</option>
-                    </select>
-                </div>
-                <div>
-                    Gender:
-                    <select id="an_gender_sel" onchange="analysisInterface.statisticDisplayer.changeFilter('gender', this.value)">
-                        <option value="all">All</option>
-                        <option value="m">Male</option>
-                        <option value="f">Female</option>
-                    </select>
-                </div>
-                <div>
-                    Reading Impairment:
-                    <select id="an_impairment_sel" onchange="analysisInterface.statisticDisplayer.changeFilter('impairment', this.value)">
-                        <option value="all">All</option>
-                        <option value="y">Only Impaired</option>
-                        <option value="n">Only Non-Impaired</option>
-                    </select>
-                </div>
-                <div>
-                    Minimum age: <input id="an_min_age" type="number" min="0" max="255" value="0" onchange="analysisInterface.statisticDisplayer.changeFilter('minAge', this.value)" />
-                    Maximum age: <input id="an_max_age" type="number" min="0" max="255" value="255" onchange="analysisInterface.statisticDisplayer.changeFilter('maxAge', this.value)" />
-                </div>
-                <div>
-                    Minimum Words Per Minute: <input id="an_min_wpm" type="number" min="0" max="500" value="0" onchange="analysisInterface.statisticDisplayer.changeFilter('minWPM', this.value)" />
-                    Maximum Words Per Minute: <input id="an_max_wpm" type="number" min="0" max="500" value="500" onchange="analysisInterface.statisticDisplayer.changeFilter('maxWPM', this.value)" />
-                </div>
-                <div>
-                    Minimum Screen Width: <input id="an_min_inner_width" type="number" min="0" max="2000" value="0" onchange="analysisInterface.statisticDisplayer.changeFilter('minInnerWidth', this.value)" />
-                    Maximum Screen Width: <input id="an_max_inner_width" type="number" min="0" max="2000" value="2000" onchange="analysisInterface.statisticDisplayer.changeFilter('maxInnerWidth', this.value)" />
-                </div>
-                <input type="button" onclick="analysisInterface.download(false)" value="Download JSON" />
-                <input type="button" onclick="analysisInterface.download(true)" value="Download CSV" />
 
-                <br><br>
+                <div class="clearfix container">
 
-                <div id="an_text"></div>
+                    <table class="contained">
+                        <tr class="option">
+                            <td>Average: </td>
+                            <td>
+                                <select id="an_average_sel" onchange="analysisInterface.statisticDisplayer.changeAverage(this.value)">
+                                    <option value="mean">Mean</option>
+                                    <option value="median">Median</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr class="option">
+                            <td>Token: </td>
+                            <td>
+                                <select id="an_token_sel" onchange="analysisInterface.statisticDisplayer.changeToken(this.value)">
+                                    <option value="char">Character</option>
+                                    <option value="word">Word</option>
+                                    <option value="clause">Clause</option>
+                                    <option value="sentence">Sentence</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr class="option">
+                            <td>Statistic: </td>
+                            <td>
+                                <select id="an_statistic_sel" onchange="analysisInterface.statisticDisplayer.changeStatistic(this.value)">
+                                    <option value="gazeDuration">Gaze Duration</option>
+                                    <option value="firstFixationDuration">First-Fixation Duration</option>
+                                    <option value="spilloverTime">Spillover Time</option>
+                                    <option value="totalReadingTime">Total Reading Time</option>
+                                    <option value="regressionsInCount">Regressions In (quantity)</option>
+                                    <option value="regressionsInTime">Regressions In (time)</option>
+                                    <option value="regressionsOutCount">Regressions Out (quantity)</option>
+                                    <option value="regressionsOutTime">Regressions Out (time)</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr class="option">
+                            <td>Gender: </td>
+                            <td>
+                                <select id="an_gender_sel" onchange="analysisInterface.statisticDisplayer.changeFilter('gender', this.value)">
+                                    <option value="all">All</option>
+                                    <option value="m">Male</option>
+                                    <option value="f">Female</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr class="option">
+                            <td>Reading Impairment: </td>
+                            <td>
+                                <select id="an_impairment_sel" onchange="analysisInterface.statisticDisplayer.changeFilter('impairment', this.value)">
+                                    <option value="all">All</option>
+                                    <option value="y">Only Impaired</option>
+                                    <option value="n">Only Non-Impaired</option>
+                                </select>
+                            </td>
+                        </tr>
+
+                    </table>
+
+                    <span class="container contained" style="width: min-content;">
+
+                        <div class="option slider">
+                            Age Range: <div id="an_age"></div>
+                        </div>
+                        <div class="option slider">
+                            Words Per Minute: <div id="an_wpm"></div>
+                        </div>
+                        <div class="option slider">
+                            Screen Inner Width: <div id="an_inner_width"></div>
+                        </div>
+
+                    </span>
+
+                    <br><br>
+
+                    <hr>
+
+                    <div class="contained">
+                        <input class="download" style="margin-right: 30px;" type="button" onclick="analysisInterface.download(false)" value="Download JSON" />
+                        <input class="download" style="margin-left: 30px;" type="button" onclick="analysisInterface.download(true)" value="Download CSV" />
+                    </div>
+
+                    <hr>
+
+                    <div id="an_text"></div>
+
+                </div>
 
             </div>
 

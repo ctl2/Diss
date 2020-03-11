@@ -943,25 +943,36 @@ analysisNamespace.StatisticDisplayer = class {
     depth = this.getDepth(document.getElementById("an_token_sel").value);
     statistic = document.getElementById("an_statistic_sel").value;
     average = document.getElementById("an_average_sel").value;
-    filters = {
-        gender: document.getElementById("an_gender_sel").value,
-        impairment: document.getElementById("an_impairment_sel").value,
-        minAge: document.getElementById("an_min_age").value,
-        maxAge: document.getElementById("an_max_age").value,
-        minWPM: document.getElementById("an_min_wpm").value,
-        maxWPM: document.getElementById("an_max_wpm").value,
-        minInnerWidth: document.getElementById("an_min_inner_width").value,
-        maxInnerWidth: document.getElementById("an_max_inner_width").value
-    };
 
     constructor(text, readers) {
-        // Make text DOM elements
+        // Make text elements
         this.displayerTree = new analysisNamespace.DisplayerTreeRoot(
             text,
             (displayer) => this.displayPaths(displayer),
             () => this.setHues()
         );
-        this.readingManager = new analysisNamespace.ReadingManager(text.length, readers, this.filters);
+        // Set up slider elements
+        let filters = {
+            gender: document.getElementById("an_gender_sel").value,
+            impairment: document.getElementById("an_impairment_sel").value,
+            minAge: 0,
+            maxAge: 100,
+            minWPM: 0,
+            maxWPM: 500,
+            minInnerWidth: 0,
+            maxInnerWidth: 2000
+        };
+        setupSlider('an_age', filters.minAge, filters.maxAge,
+            (values, handleIndex) => this.changeFilter("Age", values[handleIndex], handleIndex)
+        ),
+        setupSlider('an_wpm', filters.minWPM, filters.maxWPM,
+            (values, handleIndex) => this.changeFilter("WPM", values[handleIndex], handleIndex)
+        ),
+        setupSlider('an_inner_width', filters.minInnerWidth, filters.maxInnerWidth,
+            (values, handleIndex) => this.changeFilter("InnerWidth", values[handleIndex], handleIndex)
+        ),
+        // Initialise a new ReadingManager for text analysis
+        this.readingManager = new analysisNamespace.ReadingManager(text.length, readers, filters);
     }
 
     setHues() {
@@ -1007,8 +1018,15 @@ analysisNamespace.StatisticDisplayer = class {
         this.setHues();
     }
 
-    changeFilter(filterName, filterValue) {
-        this.displayerTree.resetResetBorderAlphas(this.depth);
+    changeFilter(filterName, filterValue, handleIndex) {
+        this.displayerTree.resetBorderAlphas(this.depth);
+        if (handleIndex !== undefined) {
+            filterName = (
+                handleIndex === 0?
+                "min":
+                "max"
+            ) + filterName;
+        }
         this.readingManager.changeFilter(filterName, filterValue);
         this.currentTextAnalysis = this.readingManager.getNewTextAnalysis();
         this.setHues();
@@ -1139,6 +1157,7 @@ analysisNamespace.InterfaceManager = class {
                         window.alert,
                         (text) => {
                             // Handle text
+                            this.text = text;
                             this.statisticDisplayer = new analysisNamespace.StatisticDisplayer(text, readers);
                             this.progressDisplayer = new analysisNamespace.ProgressDisplayer(readers.length);
                             addReadings(readers);
@@ -1156,9 +1175,13 @@ analysisNamespace.InterfaceManager = class {
             text: JSON.stringify(readers)
         }];
         // Make CSV files
+        let textCSV = Array.from(this.text).reduce(
+            (csv, char, index) => csv + "\n" + index + "," + char,
+            "sequenceNumber,character"
+        );
         let readerCSV = [["usernameHash", "gender", "age", "isImpaired"]];
         let readingCSV = [["usernameHash", "wpm", "innerWidth"]];
-        let charCSV = [["usernameHash", "charIndex", "isLineStart", "firstFixationDuration", "gazeDuration", "spilloverTime", "totalReadingTime", "regressionsOutCount", "regressionsOutTime", "regressionsInCount", "regressionsInTime"]];
+        let analysisCSV = [["usernameHash", "charIndex", "isLineStart", "firstFixationDuration", "gazeDuration", "spilloverTime", "totalReadingTime", "regressionsOutCount", "regressionsOutTime", "regressionsInCount", "regressionsInTime"]];
         for (let reader of readers) {
             let readerLine = [];
             for (let heading of readerCSV[0]) {
@@ -1170,18 +1193,18 @@ analysisNamespace.InterfaceManager = class {
             }
             let usernameHash = reader.usernameHash;
             reader.textAnalysis.forEach(
-                (charAnalysis, index) => {
-                    let charLine = [];
-                    for (let heading of charCSV[0]) {
-                        charLine.push(
+                (analysis, index) => {
+                    let analysisLine = [];
+                    for (let heading of analysisCSV[0]) {
+                        analysisLine.push(
                             heading === "usernameHash"?
                             usernameHash:
                             heading === "charIndex"?
                             index:
-                            charAnalysis[heading]
+                            analysis[heading]
                         );
                     }
-                    charCSV.push(charLine.toString());
+                    analysisCSV.push(analysisLine.toString());
                 }
             );
             readerCSV.push(readerLine.toString());
@@ -1189,8 +1212,12 @@ analysisNamespace.InterfaceManager = class {
         }
         readerCSV[0] = readerCSV[0].toString();
         readingCSV[0] = readingCSV[0].toString();
-        charCSV[0] = charCSV[0].toString();
+        analysisCSV[0] = analysisCSV[0].toString();
         return [
+            {
+                name: "text.csv",
+                text: textCSV
+            },
             {
                 name: "readers.csv",
                 text: readerCSV.join("\n")
@@ -1201,7 +1228,7 @@ analysisNamespace.InterfaceManager = class {
             },
             {
                 name: "analyses.csv",
-                text: charCSV.join("\n")
+                text: analysisCSV.join("\n")
             }
         ];
     }
@@ -1227,7 +1254,9 @@ function showAnalyseDiv() {
     let selText = selTexts[0];
     let title = selText.title;
     let version = selText.version;
-    analysisInterface = new analysisNamespace.InterfaceManager(title, version);
+    if (analysisInterface === undefined) {
+        analysisInterface = new analysisNamespace.InterfaceManager(title, version);
+    }
     // Show only the analysis div
     hideDivs("an");
 }
