@@ -45,7 +45,7 @@
 
             .new.disabled {
                 animation-name: disable;
-                animation-duration: 0.5s;
+                animation-duration: 0.4s;
                 animation-iteration-count: 1;
             }
 
@@ -56,7 +56,7 @@
 
             .new.enabled {
                 animation-name: enable;
-                animation-duration: 0.5s;
+                animation-duration: 0.4s;
                 animation-iteration-count: 1;
             }
 
@@ -66,7 +66,8 @@
             }
 
             #top {
-                padding: 8px;
+                padding: 0.5%;
+                width: 99%;
                 justify-content: start;
                 background-color: #ebebeb;
             }
@@ -98,6 +99,7 @@
                 flex-wrap: wrap;
                 align-items: stretch;
                 justify-content: center;
+                width: 100%;
             }
 
             #an {
@@ -126,8 +128,7 @@
 
             .slider {
                 font-size: 15px;
-                min-width: 300px;
-                max-width: 400px;
+                width: 400px;
                 padding-top: 2px;
                 padding-bottom: 40px;
                 padding-left: 10px;
@@ -185,6 +186,7 @@
                 border-top: 1px solid black;
                 border-bottom: 1px solid black;
                 margin: 15px;
+                padding: 10px;
                 display: flex;
                 flex-direction: row;
                 justify-content: space-around;
@@ -201,6 +203,10 @@
                     justify-content: center;
                 }
 
+                .slider {
+                    width: 300px;
+                }
+
             }
 
             #an_feedback {
@@ -209,39 +215,32 @@
 
             #an_available-feedback, #an_used-feedback {
                 width: 100%;
-                font-size: 12px;
+                font-size: 1vw;
                 border-bottom: 1px solid white;
+            }
+
+            .hidden {
+                display: none;
             }
 
             .download {
                 text-align: center;
-                font-size: 18px;
-                padding: 10px;
-                margin: 15px;
-                padding-left: 15px;
-                padding-right: 15px;
-                border-radius: 5px;
+                font-size: 14px;
+                padding: 5px;
+                margin: 5px;
+                padding-left: 10px;
+                padding-right: 10px;
+                border-radius: 4px;
+            }
+
+            .download:hover {
+                background-color: #7cbc99bf;
+                border-color: #b0d5ad;
             }
 
             select {
                 font-size: 16px;
             }
-/*
-            #text-container {
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }
-
-            #progress {
-                width: 200px;
-                height: 200px;
-                position: absolute;
-            }
-
-            .progressbar-text {
-                font-size: 50px;
-            } */
 
             .token {
                 border-width: 5px;
@@ -256,7 +255,6 @@
             }
 
             #texts_table td, th {
-                text-align: center;
                 font-size: 20px;
                 font-family: 'Lucida Sans Unicode', 'Lucida Grande', sans-serif;
             }
@@ -265,12 +263,25 @@
                 min-width: 180px;
             }
 
-            #texts_table td:nth-child(even), th:nth-child(even) {
+            #texts_table td:nth-child(even), #texts_table th:nth-child(even) {
                 border-left: 1px solid grey;
             }
 
-            #texts_table td:nth-child(odd), th:nth-child(odd) {
+            #texts_table td:nth-child(even) {
+                text-align: left;
+            }
+
+            #texts_table td:nth-child(odd), #texts_table th:nth-child(odd) {
                 border-right: 1px solid grey;
+            }
+
+            #texts_table td:nth-child(odd) {
+                text-align: right;
+            }
+
+            #texts_table th {
+                text-align: center;
+                font-weight: 900;
             }
 
             #texts {
@@ -301,10 +312,6 @@
         <script type="text/javascript" src="javascript/divs/filter.js"></script>
         <script type="text/javascript" src="javascript/divs/upload.js"></script>
         <script type="text/javascript" src="javascript/divs/viewDetails.js"></script>
-        <script type="text/javascript" src="../../node_modules/progressbar.js/dist/progressbar.js"></script>
-        <script type="text/javascript" src="../../node_modules/nouislider/distribute/nouislider.min.js"></script>
-        <script type="text/javascript" src="../../node_modules/jszip/dist/jszip.js"></script>
-        <script type="text/javascript" src="../../node_modules/file-saver/dist/FileSaver.js"></script>
         <script type="text/javascript" src="javascript/divs/analyse.js"></script>
         <script type="text/javascript" src="javascript/divs/compare.js"></script>
 
@@ -326,108 +333,108 @@
             <input class="button enabled" id="but_logout" type="button" onclick="redirect('')" value="Logout" />
         </div>
 
-        <div id="middle"></div>
+        <div id="fil" hidden>
 
-            <div id="fil" hidden>
+            <form id="fil_reset"></form>
 
-                <form id="fil_reset"></form>
+            Title Keywords
+            <input id="fil_search" form="fil_reset" type="text" placeholder="Search" /><br>
 
-                Title Keywords
-                <input id="fil_search" form="fil_reset" type="text" placeholder="Search" /><br>
+            Ownership
+            <select id="fil_type" form="fil_reset">
+                <option value="all">All</option>
+                <option value="owned">Owned</option>
+                <option value="unowned">Unowned</option>
+            </select><br>
 
-                Ownership
-                <select id="fil_type" form="fil_reset">
-                    <option value="all">All</option>
-                    <option value="owned">Owned</option>
-                    <option value="unowned">Unowned</option>
-                </select><br>
+            Minimum target age
+            <input id="fil_min_age" form="fil_reset" type="number" value="0" /><br>
 
-                Minimum target age
-                <input id="fil_min_age" form="fil_reset" type="number" value="0" /><br>
+            Maximum target age
+            <input id="fil_max_age" form="fil_reset" type="number" value="255" /><br>
 
-                Maximum target age
-                <input id="fil_max_age" form="fil_reset" type="number" value="255" /><br>
+            <input id="filter_button" type="button"
+            onclick="filterTexts(fil_search.value, fil_type.value, fil_min_age.value, fil_max_age.value)"
+            value="Filter" />
 
-                <input id="filter_button" type="button"
-                onclick="filterTexts(fil_search.value, fil_type.value, fil_min_age.value, fil_max_age.value)"
-                value="Filter" />
+        </div>
+
+        <div id="up" hidden>
+
+            <form id="up_reset"></form>
+
+            <div class="left">
+                Title <input id="up_title" type="text" /><br>
+                Version  <input id="up_ver" form="up_reset" type="text" /><br>
+                File <input id="up_file" form="up_reset" type="file" /><br>
+                Make Version's Text and Associated Reading Data Public
+                <input id="up_is_public" form="up_reset" type="checkbox" /><br>
+            </div>
+
+            <div class="right">
+
+                Minimum Reader Age
+                <input form="up_reset" type="checkbox" onchange="up_min_age.disabled = !up_min_age.disabled;" />
+                <input id="up_min_age" form="up_reset" type="number" disabled /><br>
+
+                Maximum Reader Age
+                <input form="up_reset" type="checkbox" onchange="up_max_age.disabled = !up_max_age.disabled;" />
+                <input id="up_max_age" form="up_reset" type="number" disabled /><br>
+
+                Reader Gender
+                <input form="up_reset" type="checkbox" onchange="up_gender.disabled = !up_gender.disabled;" />
+                <select id="up_gender" form="up_reset" disabled>
+                    <option value="m">Male</option>
+                    <option value="f">Female</option>
+                </select>
+
+                <!-- Should add an impairment selector -->
 
             </div>
 
-            <div id="up" hidden>
+            <input type="button" onclick="upload()" value="Upload" />
 
-                <form id="up_reset"></form>
+        </div>
 
-                <div class="left">
-                    Title <input id="up_title" type="text" /><br>
-                    Version  <input id="up_ver" form="up_reset" type="text" /><br>
-                    File <input id="up_file" form="up_reset" type="file" /><br>
-                    Make Version's Text and Associated Reading Data Public
-                    <input id="up_is_public" form="up_reset" type="checkbox" /><br>
-                </div>
+        <div id="view" hidden>
 
-                <div class="right">
+            <div id="view_title_line">
+                Title: <span id="view_title"></span>
+            </div>
+            <div id="view_ver_line">
+                Version: <span id="view_ver"></span>
+            </div>
+            <div id="view_owner_line">
+                Uploader: <span id="view_uploader"></span>
+            </div>
+            <div id="view_priv_line">
+                Privacy Level: <span id="view_privacy"></span>
+            </div>
+            <div id="view_min_age_line">
+                Target Age Minimum: <span id="view_min_age"></span>
+            </div>
+            <div id="view_max_age_line">
+                Target Age Maximum: <span id="view_max_age"></span>
+            </div>
+            <div id="view_gen_line">
+                Target Gender: <span id="view_gender"></span>
+            </div>
+            <div id="view_text_line">
+                Text:
+            </div>
+            <div id="view_text"></div>
 
-                    Minimum Reader Age
-                    <input form="up_reset" type="checkbox" onchange="up_min_age.disabled = !up_min_age.disabled;" />
-                    <input id="up_min_age" form="up_reset" type="number" disabled /><br>
+        </div>
 
-                    Maximum Reader Age
-                    <input form="up_reset" type="checkbox" onchange="up_max_age.disabled = !up_max_age.disabled;" />
-                    <input id="up_max_age" form="up_reset" type="number" disabled /><br>
+        <div id="an" hidden>
 
-                    Reader Gender
-                    <input form="up_reset" type="checkbox" onchange="up_gender.disabled = !up_gender.disabled;" />
-                    <select id="up_gender" form="up_reset" disabled>
-                        <option value="m">Male</option>
-                        <option value="f">Female</option>
-                    </select>
-
-                    <!-- Should add an impairment selector -->
-
-                </div>
-
-                <input type="button" onclick="upload()" value="Upload" />
-
+            <div>
+                <h2 id="an_title"></h2> <h2 id="an_version"></h2>
             </div>
 
-            <div id="view" hidden>
+            <div class="clearfix container">
 
-                <div id="view_title_line">
-                    Title: <span id="view_title"></span>
-                </div>
-                <div id="view_ver_line">
-                    Version: <span id="view_ver"></span>
-                </div>
-                <div id="view_owner_line">
-                    Uploader: <span id="view_uploader"></span>
-                </div>
-                <div id="view_priv_line">
-                    Privacy Level: <span id="view_privacy"></span>
-                </div>
-                <div id="view_min_age_line">
-                    Target Age Minimum: <span id="view_min_age"></span>
-                </div>
-                <div id="view_max_age_line">
-                    Target Age Maximum: <span id="view_max_age"></span>
-                </div>
-                <div id="view_gen_line">
-                    Target Gender: <span id="view_gender"></span>
-                </div>
-                <div id="view_text_line">
-                    Text:
-                </div>
-                <div id="view_text"></div>
-
-            </div>
-
-            <div id="an" hidden>
-
-                <div>
-                    <h2 id="an_title"></h2> <h2 id="an_version"></h2>
-                </div>
-
-                <div class="clearfix container">
+                <div id="an_filters" class="container">
 
                     <table class="contained">
                         <tr class="option">
@@ -502,67 +509,150 @@
 
                     </span>
 
-                    <br><br>
-
-                    <div id="an_mid-container">
-                        <div id="an_feedback">
-                            <div id="an_available-feedback"></div>
-                            <div id="an_used-feedback"></div>
-                        </div>
-                        <div>
-                            <input class="button download" type="button" onclick="analysisInterface.download(false)" value="Download JSON" />
-                            <input class="button download" type="button" onclick="analysisInterface.download(true)" value="Download CSV" />
-                        </div>
-                    </div>
-
-                    <div id="an_text"></div>
-
                 </div>
+
+                <div id="an_mid-container">
+                    <div id="an_feedback" class="hidden">
+                        <div id="an_available-feedback"></div>
+                        <div id="an_used-feedback"></div>
+                    </div>
+                    <div>
+                        <input class="button download" type="button" onclick="analysisInterface.hideFilters(this)" value="Hide Filters" />
+                        <input class="button download" type="button" onclick="analysisInterface.download(false)" value="Download JSON" />
+                        <input class="button download" type="button" onclick="analysisInterface.download(true)" value="Download CSV" />
+                    </div>
+                </div>
+
+                <div id="an_text"></div>
 
             </div>
 
-            <div id="comp" hidden>
+        </div>
 
-                <select id="comp_average_sel" onchange="comparisonManager.updateComparison()">
-                    <option value="mean">Mean</option>
-                    <option value="median">Median</option>
-                </select>
-                <input type="checkbox" onclick="">
-                <br>
+        <div id="comp" hidden>
+
+            <div class="clearfix container">
+
+                <div id="comp_filters" class="container">
+
+                    <table class="contained">
+                        <tr class="option">
+                            <td>Average: </td>
+                            <td>
+                                <select id="comp_average_sel" onchange="comparisonInterface.statisticDisplayer.changeAverage(this.value)">
+                                    <option value="mean">Mean</option>
+                                    <option value="median">Median</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr class="option">
+                            <td>Token: </td>
+                            <td>
+                                <select id="comp_token_sel" onchange="comparisonInterface.statisticDisplayer.changeToken(this.value)">
+                                    <option value="char">Character</option>
+                                    <option value="word">Word</option>
+                                    <option value="clause">Clause</option>
+                                    <option value="sentence">Sentence</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr class="option">
+                            <td>Statistic: </td>
+                            <td>
+                                <select id="comp_statistic_sel" onchange="comparisonInterface.statisticDisplayer.changeStatistic(this.value)">
+                                    <option value="gazeDuration">Gaze Duration</option>
+                                    <option value="firstFixationDuration">First-Fixation Duration</option>
+                                    <option value="spilloverTime">Spillover Time</option>
+                                    <option value="totalReadingTime">Total Reading Time</option>
+                                    <option value="regressionsInCount">Regressions In (quantity)</option>
+                                    <option value="regressionsInTime">Regressions In (time)</option>
+                                    <option value="regressionsOutCount">Regressions Out (quantity)</option>
+                                    <option value="regressionsOutTime">Regressions Out (time)</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr class="option">
+                            <td>Gender: </td>
+                            <td>
+                                <select id="comp_gender_sel" onchange="comparisonInterface.statisticDisplayer.changeFilter('gender', this.value)">
+                                    <option value="all">All</option>
+                                    <option value="m">Male</option>
+                                    <option value="f">Female</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr class="option">
+                            <td>Reading Impairment: </td>
+                            <td>
+                                <select id="comp_impairment_sel" onchange="comparisonInterface.statisticDisplayer.changeFilter('impairment', this.value)">
+                                    <option value="all">All</option>
+                                    <option value="y">Only Impaired</option>
+                                    <option value="n">Only Non-Impaired</option>
+                                </select>
+                            </td>
+                        </tr>
+
+                    </table>
+
+                    <span class="container contained" style="width: min-content;">
+
+                        <div class="option slider">
+                            Age Range: <div id="an_age"></div>
+                        </div>
+                        <div class="option slider">
+                            Words Per Minute: <div id="an_wpm"></div>
+                        </div>
+                        <div class="option slider">
+                            Screen Inner Width: <div id="an_inner_width"></div>
+                        </div>
+                        <div class="option slider">
+                            Percentile Range: <div id="an_inner_width"></div>
+                        </div>
+
+                    </span>
+
+                </div>
+
+                <div id="comp_mid-container">
+                    <div id="comp_feedback" class="hidden">
+                        <div id="comp_available-feedback"></div>
+                        <div id="comp_used-feedback"></div>
+                    </div>
+                    <div>
+                        <input class="button download" type="button" onclick="comparisonInterface.hideFilters(this)" value="Hide Filters" />
+                        <input class="button download" type="button" onclick="comparisonInterface.download(false)" value="Download JSON" />
+                        <input class="button download" type="button" onclick="comparisonInterface.download(true)" value="Download CSV" />
+                    </div>
+                </div>
 
                 <table>
                     <thead>
                         <tr>
                             <th>Text</th>
+                            <th>Sample Size</th>
                             <th>Reading Speed (wpm)</th>
                             <th>Gaze Duration (ms)</th>
                             <th>Number of Regressions (%)</th>
                             <th>Regression Path Duration (ms)</th>
-                            <!--
-                                give different views: graphs, heatmaps, tables
-                                maybe link these via mousehover, etc.
-                                also give standard deviation, etc.
-                                Comparisons by demographic is also useful
-                             -->
                         </tr>
                     </thead>
-                    <tbody id="comp_table_body"></tbody>
+                    <tbody id="comp_table"></tbody>
                 </table>
 
             </div>
 
-            <br><br>
-
-            <table id="texts_table">
-                <thead>
-                    <th>Unselected</th>
-                    <th>Selected</th>
-                </thead>
-                <tbody id="texts"></tbody>
-                <tfoot></tfoot>
-            </table>
-
         </div>
+
+        <br><br>
+
+        <table id="texts_table">
+            <thead>
+                <th>Unselected</th>
+                <th>Selected</th>
+            </thead>
+            <tbody id="texts"></tbody>
+            <tfoot></tfoot>
+        </table>
 
     </body>
 

@@ -33,7 +33,7 @@ function upload() {
         }
         if (data !== undefined) {
             let versionEl = document.getElementById("up_ver");
-            data.push("isNew=" + Number(document.getElementById("up_title").disabled != "disabled"));
+            data.push("isNew=" + Number(!document.getElementById("up_title").hasAttribute("disabled")));
             postRequest(data, "../../private/researcher/uploadText.php", window.alert, uploadSuccess);
         }
     });

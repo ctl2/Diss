@@ -30,5 +30,4 @@ function setupSlider(id, start, end, onchange) {
             }
         }
     );
-    element.noUiSlider.on("slide", onchange);
 }

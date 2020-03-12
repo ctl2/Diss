@@ -120,14 +120,15 @@ analysisNamespace.Window = class {
             } else { // Prioritise left or right-side characters in time allocation
                 // gazeDuration = window.duration / (windowLength + (windowLength-1) + ... + 1)
                 firstFixationDuration = this.duration / (((windowLength * windowLength) + windowLength) / 2);
+                 // The first fixation on a line tends to be longer than other fixations due to a lack of preprocessing
+                 // K Rayner, 1977, Visual attention in reading: Eye movements reflect cognitive processes
+                if (this.isPathStart) firstFixationDuration *= 0.7;
                 for (let i = this.leftmostChar; i <= this.rightmostChar; i++) {
-                    let gazeDuration =
+                    let gazeDuration = (
                         this.isPathStart?
                         firstFixationDuration * (this.rightmostChar + 1 - i): // Prioritise left side
-                        firstFixationDuration * (i + 1 - this.leftmostChar); // Prioritise right side
-                     // The first fixation on a line tends to be longer than other fixations due to a lack of preprocessing
-                     // K Rayner, 1977, Visual attention in reading: Eye movements reflect cognitive processes
-                    if (this.isPathStart) gazeDuration *= 0.7;
+                        firstFixationDuration * (i + 1 - this.leftmostChar) // Prioritise right side
+                    );
                     let newFixation = new analysisNamespace.Fixation(i, firstFixationDuration, gazeDuration);
                     fixations.push(newFixation);
                 }
@@ -634,53 +635,79 @@ analysisNamespace.TextAnalysisList = class extends Array {
 
 analysisNamespace.LoadFeedbackDisplayer = class {
 
-    available = 0;
+    available = Object.assign(
+        {
+            label: "available",
+            count: 0,
+            isPaused: false,
+            queuedAnimation: undefined
+        },
+        this.constructor.available
+    );
+    used = Object.assign(
+        {
+            label: "used",
+            count: 0,
+            isPaused: false,
+            queuedAnimation: undefined
+        },
+        this.constructor.used
+    );
+
+    // Calls to the animate method of progressbar.js throw an error if a previous animation is still ongoing
+    // https://github.com/kimmobrunfeldt/progressbar.js/issues/257
+    // The pause/queue mechanism in this class mitigates these errors.
 
     constructor(total) {
         this.total = total;
-        let options = {
-            color: '#3a3a3a',
-            strokeWidth: "4",
-            trailColor: '#444444',
-            duration: 300,
-            from: {
-                color: '#822'
-            },
-            to: {
-                color: '#282'
-            },
-            step: function(state, circle, attachment) {
-                circle.path.setAttribute('stroke', state.color);
-            },
-            text: {
-                value: '0',
-                style: {
-                    color: '#efe',
-                    position: 'absolute',
-                    left: '1%',
-                    top: '10%',
-                    padding: 0,
-                    margin: 0
-                }
-            }
-        };
-        this.availableBar = new ProgressBar.Line(document.getElementById("an_available-feedback"), options);
-        this.usedBar = new ProgressBar.Line(document.getElementById("an_used-feedback"), options);
+        this.available.element.parentElement.classList.remove("hidden");
+    }
+
+    unpause(displayer) {
+        displayer.isPaused = false;
+        if (displayer.queuedAnimation !== undefined) {
+            displayer.queuedAnimation();
+            displayer.queuedAnimation = undefined;
+        }
+    }
+
+    animate(displayer, progress, options) {
+        if (displayer.hasOwnProperty("bar") && !displayer.isPaused) {
+            displayer.isPaused = true;
+            displayer.bar.animate(progress, options,
+                () => this.unpause(displayer) // This function is called when the animation ends
+            );
+            displayer.bar.setText(
+                displayer.count + (
+                    displayer.count === 1?
+                    " analysis ":
+                    " analyses "
+                ) + displayer.label
+            );
+        } else {
+            displayer.queuedAnimation = () => this.animate(displayer, progress);
+        }
     }
 
     addReading(isUsed) {
-        let progress = ++this.available / this.total;
-        this.availableBar.animate(progress);
-        this.availableBar.setText(this.available + " analyses available");
+        this.available.count++;
+        let progress = this.available.count / this.total;
+        this.animate(this.available, progress);
         if (isUsed) {
-            this.setUsed(++this.used);
+            this.setUsed(this.used.count + 1);
         }
     }
 
     setUsed(newUsed) {
-        let progress = newUsed / this.available;
-        this.usedBar.animate(progress);
-        this.usedBar.setText(newUsed + " analyses used");
+        this.used.count = newUsed;
+        let progress = newUsed / this.available.count;
+        this.animate(this.used, progress);
+    }
+
+    destroy() {
+        this.available.element.parentElement.classList.add("hidden");
+        this.animate(this.available, 0, {duration: 0});
+        this.animate(this.used, 0, {duration: 0});
     }
 
 }
@@ -729,6 +756,10 @@ analysisNamespace.ReadingManager = class {
 
     changeFilter(filterName, filterValue) {
         this.filters[filterName] = filterValue;
+    }
+
+    destroy() {
+        this.loadFeedbackDisplayer.destroy();
     }
 
 }
@@ -856,7 +887,7 @@ analysisNamespace.DisplayerLeaf = class extends analysisNamespace.DisplayerTree 
 
 analysisNamespace.DisplayerTreeRoot = class extends Array {
 
-    constructor(text, onclick1, onclick2) {
+    constructor(root, text, onclick1, onclick2) {
         super();
         // Group by sentence
         let tokenEnders = [
@@ -895,7 +926,6 @@ analysisNamespace.DisplayerTreeRoot = class extends Array {
             }
             return displayerArray;
         };
-        let root = document.getElementById("an_text");
         root.innerHTML = "";
         this.push(...formSubTree(root));
     }
@@ -1000,33 +1030,40 @@ analysisNamespace.StatisticDisplayer = class {
     statistic = document.getElementById("an_statistic_sel").value;
     average = document.getElementById("an_average_sel").value;
 
-    constructor(text, readers) {
+    constructor(root, text, readers) {
         // Make text elements
         this.displayerTree = new analysisNamespace.DisplayerTreeRoot(
+            root,
             text,
             (displayer) => this.displayPaths(displayer),
             () => this.setHues()
         );
-        // Set up slider elements
+         // change "slide" to "change" to reduce slowdown
+         let ageSlider = document.getElementById("an_age").noUiSlider;
+         let wpmSlider = document.getElementById("an_wpm").noUiSlider;
+         let widthSlider = document.getElementById("an_inner_width").noUiSlider;
+        ageSlider.on(
+            "slide",
+            (values, handleIndex) => this.changeFilter("Age", values[handleIndex], handleIndex)
+        );
+        wpmSlider.on(
+            "slide",
+            (values, handleIndex) => this.changeFilter("WPM", values[handleIndex], handleIndex)
+        );
+        widthSlider.on(
+            "slide",
+            (values, handleIndex) => this.changeFilter("InnerWidth", values[handleIndex], handleIndex)
+        );
         let filters = {
             gender: document.getElementById("an_gender_sel").value,
             impairment: document.getElementById("an_impairment_sel").value,
-            minAge: 0,
-            maxAge: 100,
-            minWPM: 0,
-            maxWPM: 500,
-            minInnerWidth: 0,
-            maxInnerWidth: 2000
+            minAge: ageSlider.get()[0],
+            maxAge: ageSlider.get()[1],
+            minWPM: wpmSlider.get()[0],
+            maxWPM: wpmSlider.get()[1],
+            minInnerWidth: widthSlider.get()[0],
+            maxInnerWidth: widthSlider.get()[1]
         };
-        setupSlider('an_age', filters.minAge, filters.maxAge,
-            (values, handleIndex) => this.changeFilter("Age", values[handleIndex], handleIndex)
-        ),
-        setupSlider('an_wpm', filters.minWPM, filters.maxWPM,
-            (values, handleIndex) => this.changeFilter("WPM", values[handleIndex], handleIndex)
-        ),
-        setupSlider('an_inner_width', filters.minInnerWidth, filters.maxInnerWidth,
-            (values, handleIndex) => this.changeFilter("InnerWidth", values[handleIndex], handleIndex)
-        ),
         // Initialise a new ReadingManager for text analysis
         this.readingManager = new analysisNamespace.ReadingManager(text.length, readers, filters);
     }
@@ -1144,11 +1181,16 @@ analysisNamespace.StatisticDisplayer = class {
         this.displayerTree.setHues(this.depth, this.currentTextAnalysis.getRegressionTotals(subChars, regressionStat.type, regressionStat.measure), this.getValueDeriver());
     }
 
+    destroy() {
+        this.readingManager.destroy();
+    }
+
 }
 
 analysisNamespace.InterfaceManager = class {
 
     constructor(title, version) {
+        this.textDiv = document.getElementById("an_text");
         this.textInfo = {
             title: title,
             version: version
@@ -1189,13 +1231,29 @@ analysisNamespace.InterfaceManager = class {
                         (text) => {
                             // Handle text
                             this.text = text;
-                            this.statisticDisplayer = new analysisNamespace.StatisticDisplayer(text, readers);
+                            this.statisticDisplayer = new analysisNamespace.StatisticDisplayer(
+                                this.textDiv,
+                                text,
+                                readers
+                            );
                             addReadings(readers);
                         }
                     );
                 }
             }
         );
+    }
+
+    hideFilters(button) {
+        document.getElementById("an_filters").classList.add("hidden");
+        button.value = "Show Filters";
+        button.onclick = () => this.showFilters(button);
+    }
+
+    showFilters(button) {
+        document.getElementById("an_filters").classList.remove("hidden");
+        button.value = "Hide Filters";
+        button.onclick = () => this.hideFilters(button);
     }
 
     getFiles(asCSV) {
@@ -1265,14 +1323,29 @@ analysisNamespace.InterfaceManager = class {
 
     download(asCSV) {
         // Get the contents of the file to be downloaded
-        let zip = new JSZip();
         let fileContents = this.getFiles(asCSV);
-        for (let file of fileContents) {
-            zip.file(file.name, file.text);
-        }
-        zip.generateAsync({type:"blob"}).then(
-            (blob) => saveAs(blob, this.textInfo.title + "[" + this.textInfo.version + "] - " + new Date().toLocaleDateString() + ".zip")
+        import("../../../../node_modules/jszip/dist/jszip.js").then(
+            (zipModule) => {
+                let zip = new JSZip();
+                for (let file of fileContents) {
+                    zip.file(file.name, file.text);
+                }
+                zip.generateAsync({type:"blob"}).then(
+                    (blob) => import("../../../../node_modules/file-saver/dist/FileSaver.js").then(
+                        (fileModule) => {
+                            saveAs(blob, this.textInfo.title + "[" + this.textInfo.version + "] - " + new Date().toLocaleDateString() + ".zip");
+                        }
+                    )
+                );
+            }
         );
+    }
+
+    destroy() {
+        if (this.hasOwnProperty("statisticDisplayer")) {
+            this.textDiv.innerHTML = ""; // Reset display
+            this.statisticDisplayer.destroy();
+        }
     }
 
 }
@@ -1284,9 +1357,60 @@ function showAnalyseDiv() {
     let selText = selTexts[0];
     let title = selText.title;
     let version = selText.version;
-    if (analysisInterface === undefined) {
+    if (analysisInterface === undefined || analysisInterface.textInfo.title !== selText.title || analysisInterface.textInfo.version !== selText.version) {
+        if (analysisInterface !== undefined) {
+            analysisInterface.destroy();
+        }
         analysisInterface = new analysisNamespace.InterfaceManager(title, version);
     }
     // Show only the analysis div
     hideDivs("an");
 }
+
+import("../../../../node_modules/progressbar.js/dist/progressbar.js").then(
+    (progressBarModule) => {
+        let options = {
+            color: '#3a3a3a',
+            strokeWidth: "4",
+            trailColor: '#444444',
+            duration: 400,
+            from: {
+                color: '#822'
+            },
+            to: {
+                color: '#282'
+            },
+            step: function(state, circle, attachment) {
+                circle.path.setAttribute('stroke', state.color);
+            },
+            text: {
+                value: '0',
+                style: {
+                    color: '#efe',
+                    position: 'absolute',
+                    left: '1%',
+                    top: '10%',
+                    padding: 0,
+                    margin: 0
+                }
+            }
+        };
+        analysisNamespace.LoadFeedbackDisplayer.available = {
+            element: document.getElementById("an_available-feedback")
+        };
+        analysisNamespace.LoadFeedbackDisplayer.used = {
+            element: document.getElementById("an_used-feedback")
+        };
+        analysisNamespace.LoadFeedbackDisplayer.available.bar = new ProgressBar.Line(analysisNamespace.LoadFeedbackDisplayer.available.element, options);
+        analysisNamespace.LoadFeedbackDisplayer.used.bar = new ProgressBar.Line(analysisNamespace.LoadFeedbackDisplayer.used.element, options);
+    }
+);
+
+import("../../../../node_modules/nouislider/distribute/nouislider.min.js").then(
+    (sliderModule) => {
+        // Set up slider elements
+        setupSlider('an_age', 0, 100);
+        setupSlider('an_wpm', 0, 500);
+        setupSlider('an_inner_width', 0, 2000);
+    }
+)
