@@ -31,6 +31,7 @@ function appendUnselectedTextCell(row_el, index) {
     verSel.id = "unsel_ver_" + index;
     // Make button
     let selectButton = document.createElement("input");
+    selectButton.classList.add("button");
     selectButton.type = "button";
     selectButton.onclick = () => select(
         document.getElementById("unsel_title_" + index).innerText,
@@ -51,6 +52,7 @@ function appendSelectedTextCell(row_el, index) {
     textCell.id = "sel_" + index;
     // Make button
     let unselectButton = document.createElement("input");
+    unselectButton.classList.add("button");
     unselectButton.type = "button";
     unselectButton.onclick = () => unselect(
         document.getElementById("sel_title_" + index).innerText,
@@ -76,7 +78,7 @@ function appendNavRow(table_el) {
     let navRow = document.createElement("tr");
     appendNavCell(navRow, "unsel");
     appendNavCell(navRow, "sel");
-    table_el.appendChild(navRow);
+    table_el.parentElement.children.item(2).appendChild(navRow);
 }
 
 function appendNavCell(row_el, id) {

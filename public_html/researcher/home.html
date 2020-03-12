@@ -10,8 +10,77 @@
         <link rel="stylesheet" type="text/css" href="../../node_modules/nouislider/distribute/nouislider.min.css">
         <style>
 
+            @keyframes disable {
+                0% {
+                    background-color: #98deb7bf;
+                    border-color: #a5e6d1;
+                }
+                100% {
+                    background-color: #d5d5d5;
+                    border-color: #d6d6d6;
+                }
+            }
+
+            @keyframes enable {
+                0% {
+                    background-color: #d5d5d5;
+                    border-color: #d6d6d6;
+                }
+                100% {
+                    background-color: #98deb7bf;
+                    border-color: #a5e6d1;
+                }
+            }
+
+            .button {
+                background-color: #98deb7bf;
+                border-color: #a5e6d1;
+                font-family: Tahoma, Geneva, sans-serif;
+            }
+
+            .disabled {
+                background-color: #d5d5d5;
+                border-color: #d6d6d6;
+            }
+
+            .new.disabled {
+                animation-name: disable;
+                animation-duration: 0.5s;
+                animation-iteration-count: 1;
+            }
+
+            .enabled {
+                background-color: #98deb7bf;
+                border-color: #a5e6d1;
+            }
+
+            .new.enabled {
+                animation-name: enable;
+                animation-duration: 0.5s;
+                animation-iteration-count: 1;
+            }
+
+            .enabled:hover {
+                background-color: #69ad87bf;
+                border-color: #6c9e8e;
+            }
+
             #top {
-                padding-bottom: 20px;
+                padding: 8px;
+                justify-content: start;
+                background-color: #ebebeb;
+            }
+
+            #top .button {
+                font-size: 15px;
+                padding-bottom: 2px;
+                padding-left: 8px;
+                padding-right: 8px;
+                border-radius: 2px;
+            }
+
+            #but_logout {
+                margin-left: auto;
             }
 
             #middle {
@@ -42,18 +111,13 @@
                 padding-right: 40px;
             }
 
-            .container hr {
-                width: 100%;
-                margin: 30px;
-            }
-
             .contained {
                 margin-left: auto;
                 margin-right: auto;
             }
 
-            tr:hover {
-                background-color: #f5f5f5;
+            table {
+                border-collapse: collapse;
             }
 
             td {
@@ -62,13 +126,15 @@
 
             .slider {
                 font-size: 15px;
-                width: 480px;
+                min-width: 300px;
+                max-width: 400px;
                 padding-top: 2px;
+                padding-bottom: 40px;
                 padding-left: 10px;
                 padding-right: 10px;
             }
 
-            .slider:hover {
+            .option:hover {
                 background-color: #f5f5f5;
             }
 
@@ -114,31 +180,111 @@
                 height: 32px;
             }
 
+            #an_mid-container {
+                width: 100%;
+                border-top: 1px solid black;
+                border-bottom: 1px solid black;
+                margin: 15px;
+                display: flex;
+                flex-direction: row;
+                justify-content: space-around;
+                align-items: center;
+            }
+
+            @media screen and (max-width: 900px) {
+
+                #an_feedback {
+                    display: none;
+                }
+
+                #an_mid-container {
+                    justify-content: center;
+                }
+
+            }
+
+            #an_feedback {
+                width: 50%;
+            }
+
+            #an_available-feedback, #an_used-feedback {
+                width: 100%;
+                font-size: 12px;
+                border-bottom: 1px solid white;
+            }
+
             .download {
                 text-align: center;
                 font-size: 18px;
-                font-family: Tahoma, Geneva, sans-serif;
                 padding: 10px;
+                margin: 15px;
                 padding-left: 15px;
                 padding-right: 15px;
                 border-radius: 5px;
-                background-color: #98deb7bf;
-                border-color: #a5e6d1;
-            }
-
-            .download:hover {
-                background-color: #69ad87bf;
-                border-color: #6c9e8e;
             }
 
             select {
                 font-size: 16px;
             }
+/*
+            #text-container {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            #progress {
+                width: 200px;
+                height: 200px;
+                position: absolute;
+            }
+
+            .progressbar-text {
+                font-size: 50px;
+            } */
 
             .token {
                 border-width: 5px;
                 font: 20px lucida-console, monospace;
                 font-weight: inherit;
+            }
+
+            #texts_table {
+                margin: auto;
+                background-color: #ebebeb;
+                max-width: 100%;
+            }
+
+            #texts_table td, th {
+                text-align: center;
+                font-size: 20px;
+                font-family: 'Lucida Sans Unicode', 'Lucida Grande', sans-serif;
+            }
+
+            #texts_table td {
+                min-width: 180px;
+            }
+
+            #texts_table td:nth-child(even), th:nth-child(even) {
+                border-left: 1px solid grey;
+            }
+
+            #texts_table td:nth-child(odd), th:nth-child(odd) {
+                border-right: 1px solid grey;
+            }
+
+            #texts {
+                border-top: 3px solid darkgrey;
+                border-bottom: 3px solid darkgrey;
+            }
+
+            #texts td:hover {
+                background-color: #f5f5f5;
+            }
+
+            #texts .button {
+                font-size: 18px;
+                border-radius: 3px;
             }
 
         </style>
@@ -149,31 +295,35 @@
         <script type="text/javascript">
             checkPrivileges("researcher");
         </script>
-        <script type="text/javascript" src="javascript/divs/controlDivs.js"></script>
         <script type="text/javascript" src="javascript/divs/lib.js"></script>
+        <script type="text/javascript" src="javascript/divs/controlDivs.js"></script>
+        <script type="text/javascript" src="javascript/divs/setupDivs.js" defer></script>
         <script type="text/javascript" src="javascript/divs/filter.js"></script>
         <script type="text/javascript" src="javascript/divs/upload.js"></script>
         <script type="text/javascript" src="javascript/divs/viewDetails.js"></script>
+        <script type="text/javascript" src="../../node_modules/progressbar.js/dist/progressbar.js"></script>
         <script type="text/javascript" src="../../node_modules/nouislider/distribute/nouislider.min.js"></script>
         <script type="text/javascript" src="../../node_modules/jszip/dist/jszip.js"></script>
         <script type="text/javascript" src="../../node_modules/file-saver/dist/FileSaver.js"></script>
         <script type="text/javascript" src="javascript/divs/analyse.js"></script>
         <script type="text/javascript" src="javascript/divs/compare.js"></script>
-        <script type="text/javascript" src="javascript/controlTextTable.js" defer></script>
+
+        <script type="text/javascript" src="javascript/controlTextTable.js"></script>
         <script type="text/javascript" src="javascript/setupTextTable.js" defer></script>
 
     </head>
 
     <body>
 
-        <div id="top">
-            <input id="but_fil" type="button" onclick="showFilterDiv()" value="Filter" />
-            <input id="but_new" type="button" onclick="showUploadDiv(true)" value="New Text" />
-            <input id="but_ver" type="button" onclick="showUploadDiv(false)" value="New Version" disabled />
-            <input id="but_view" type="button" onclick="showViewDetailsDiv()" value="View Details" disabled />
-            <input id="but_ana" type="button" onclick="showAnalyseDiv()" value="Analyse" disabled />
-            <input id="but_comp" type="button" onclick="showCompareDiv()" value="Compare" disabled />
-            <input id="but_hide" type="button" onclick="hideDivs()" value="Hide" disabled />
+        <div class="container" id="top">
+            <input class="button enabled" id="but_fil" type="button" onclick="showFilterDiv()" value="Filter" />
+            <input class="button enabled" id="but_new" type="button" onclick="showUploadDiv(true)" value="New Text" />
+            <input class="button disabled" id="but_ver" type="button" onclick="showUploadDiv(false)" value="New Version" disabled />
+            <input class="button disabled" id="but_view" type="button" onclick="showViewDetailsDiv()" value="View Details" disabled />
+            <input class="button disabled" id="but_ana" type="button" onclick="showAnalyseDiv()" value="Analyse" disabled />
+            <input class="button disabled" id="but_comp" type="button" onclick="showCompareDiv()" value="Compare" disabled />
+            <input class="button disabled" id="but_hide" type="button" onclick="hideDivs()" value="Hide" disabled />
+            <input class="button enabled" id="but_logout" type="button" onclick="redirect('')" value="Logout" />
         </div>
 
         <div id="middle"></div>
@@ -354,14 +504,16 @@
 
                     <br><br>
 
-                    <hr>
-
-                    <div class="contained">
-                        <input class="download" style="margin-right: 30px;" type="button" onclick="analysisInterface.download(false)" value="Download JSON" />
-                        <input class="download" style="margin-left: 30px;" type="button" onclick="analysisInterface.download(true)" value="Download CSV" />
+                    <div id="an_mid-container">
+                        <div id="an_feedback">
+                            <div id="an_available-feedback"></div>
+                            <div id="an_used-feedback"></div>
+                        </div>
+                        <div>
+                            <input class="button download" type="button" onclick="analysisInterface.download(false)" value="Download JSON" />
+                            <input class="button download" type="button" onclick="analysisInterface.download(true)" value="Download CSV" />
+                        </div>
                     </div>
-
-                    <hr>
 
                     <div id="an_text"></div>
 
@@ -401,12 +553,13 @@
 
             <br><br>
 
-            <table>
+            <table id="texts_table">
                 <thead>
                     <th>Unselected</th>
                     <th>Selected</th>
                 </thead>
                 <tbody id="texts"></tbody>
+                <tfoot></tfoot>
             </table>
 
         </div>

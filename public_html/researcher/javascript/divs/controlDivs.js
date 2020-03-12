@@ -1,3 +1,21 @@
+function disableButton(button) {
+    if (!button.hasAttribute("disabled")) {
+        button.classList.add("new");
+    }
+    button.disabled = "disabled";
+    button.classList.add("disabled");
+    button.classList.remove("enabled");
+}
+
+function enableButton(button) {
+    if (button.hasAttribute("disabled")) {
+        button.classList.add("new");
+    }
+    button.removeAttribute("disabled");
+    button.classList.add("enabled");
+    button.classList.remove("disabled");
+}
+
 function hideDivs(exception) {
     // Define a collection of div IDs to hide
     var divNames = ["fil", "up", "view", "an", "comp"];
@@ -10,12 +28,13 @@ function hideDivs(exception) {
             if (resetForm !== null) resetForm.reset();
         }
     }
+    let hideButton = document.getElementById("but_hide");
     if (exception) {
         exceptDiv = document.getElementById(exception);
         exceptDiv.removeAttribute("hidden");
-        document.getElementById("but_hide").removeAttribute("disabled");
+        enableButton(hideButton);
     } else {
-        document.getElementById("but_hide").disabled = "disabled";
+        disableButton(hideButton);
     }
 }
 
@@ -28,26 +47,26 @@ function updateDivButtons() {
     // Set disabled properties
     switch (selTexts.length) {
         case 0:
-            verButton.disabled = "disabled";
-            viewButton.disabled = "disabled";
-            anButton.disabled = "disabled";
-            compButton.disabled = "disabled";
+            disableButton(verButton);
+            disableButton(viewButton);
+            disableButton(anButton);
+            disableButton(compButton);
             break;
         case 1:
             let selTextTitle = selTexts[0].title;
             if (allTexts[selTextTitle].isOwned == true) {
-                verButton.removeAttribute("disabled");
+                enableButton(verButton);
             } else {
-                verButton.disabled = "disabled";
+                disableButton(verButton);
             }
-            viewButton.removeAttribute("disabled");
-            anButton.removeAttribute("disabled");
-            compButton.disabled = "disabled";
+            enableButton(viewButton);
+            enableButton(anButton);
+            disableButton(compButton);
             break;
         default:
-            verButton.disabled = "disabled";
-            viewButton.disabled = "disabled";
-            anButton.disabled = "disabled";
-            compButton.removeAttribute("disabled");
+            disableButton(verButton);
+            disableButton(viewButton);
+            disableButton(anButton);
+            enableButton(compButton);
     }
 }

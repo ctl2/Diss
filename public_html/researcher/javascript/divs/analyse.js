@@ -632,9 +632,63 @@ analysisNamespace.TextAnalysisList = class extends Array {
 
 }
 
+analysisNamespace.LoadFeedbackDisplayer = class {
+
+    available = 0;
+
+    constructor(total) {
+        this.total = total;
+        let options = {
+            color: '#3a3a3a',
+            strokeWidth: "4",
+            trailColor: '#444444',
+            duration: 300,
+            from: {
+                color: '#822'
+            },
+            to: {
+                color: '#282'
+            },
+            step: function(state, circle, attachment) {
+                circle.path.setAttribute('stroke', state.color);
+            },
+            text: {
+                value: '0',
+                style: {
+                    color: '#efe',
+                    position: 'absolute',
+                    left: '1%',
+                    top: '10%',
+                    padding: 0,
+                    margin: 0
+                }
+            }
+        };
+        this.availableBar = new ProgressBar.Line(document.getElementById("an_available-feedback"), options);
+        this.usedBar = new ProgressBar.Line(document.getElementById("an_used-feedback"), options);
+    }
+
+    addReading(isUsed) {
+        let progress = ++this.available / this.total;
+        this.availableBar.animate(progress);
+        this.availableBar.setText(this.available + " analyses available");
+        if (isUsed) {
+            this.setUsed(++this.used);
+        }
+    }
+
+    setUsed(newUsed) {
+        let progress = newUsed / this.available;
+        this.usedBar.animate(progress);
+        this.usedBar.setText(newUsed + " analyses used");
+    }
+
+}
+
 analysisNamespace.ReadingManager = class {
 
     constructor(textLength, readers, filters) {
+        this.loadFeedbackDisplayer = new analysisNamespace.LoadFeedbackDisplayer(readers.length);
         this.filters = filters;
         this.textLength = textLength;
         // Initialise readings field
@@ -649,10 +703,9 @@ analysisNamespace.ReadingManager = class {
         let text = new analysisNamespace.Text(windowPath, this.textLength);
         reader.textAnalysis = new analysisNamespace.TextAnalysis(text);
         // Return true if the reading affects the analysis requested by the reader
-        if (reader.isWithinGroup(...Object.values(this.filters))) {
-            return true;
-        }
-        return false;
+        let isRelevant = reader.isWithinGroup(...Object.values(this.filters));
+        this.loadFeedbackDisplayer.addReading(isRelevant);
+        return isRelevant;
     }
 
     getRelevantReaders() {
@@ -663,11 +716,14 @@ analysisNamespace.ReadingManager = class {
 
     getNewTextAnalysis() {
         let newAnalysisList = new analysisNamespace.TextAnalysisList(this.textLength);
+        let usedReadings = 0;
         for (let reader of this.readers) {
             if (reader.isWithinGroup(...Object.values(this.filters)) && reader.hasOwnProperty("textAnalysis")) {
                 newAnalysisList.addTextAnalysis(reader.textAnalysis);
+                usedReadings++;
             }
         }
+        this.loadFeedbackDisplayer.setUsed(usedReadings);
         return newAnalysisList;
     }
 
@@ -1090,29 +1146,6 @@ analysisNamespace.StatisticDisplayer = class {
 
 }
 
-analysisNamespace.ProgressDisplayer = class {
-
-    successes = 0;
-    failures = 0;
-
-    constructor(total) {
-        this.total = total;
-    }
-
-    addSuccess() {
-
-    }
-
-    addFailure() {
-
-    }
-
-    updateDisplay() {
-
-    }
-
-}
-
 analysisNamespace.InterfaceManager = class {
 
     constructor(title, version) {
@@ -1127,12 +1160,10 @@ analysisNamespace.InterfaceManager = class {
                     ["title=" + title, "version=" + version, "readerHash=" + readers[curIndex].usernameHash],
                     "../../private/researcher/getWindows.php",
                     () => {
-                        this.progressDisplayer.addFailure();
                         addReadings(readers, curIndex + 1);
                     },
                     // Add the next reading
                     (windows) => {
-                        this.progressDisplayer.addSuccess();
                         this.statisticDisplayer.addReading(curIndex, JSON.parse(windows));
                         addReadings(readers, curIndex + 1);
                     }
@@ -1159,7 +1190,6 @@ analysisNamespace.InterfaceManager = class {
                             // Handle text
                             this.text = text;
                             this.statisticDisplayer = new analysisNamespace.StatisticDisplayer(text, readers);
-                            this.progressDisplayer = new analysisNamespace.ProgressDisplayer(readers.length);
                             addReadings(readers);
                         }
                     );

@@ -18,7 +18,7 @@ function setupSlider(id, start, end, onchange) {
                 'min': start,
                 'max': end
             },
-            behaviour: 'tap-drag',
+            behaviour: 'tap',
             format: {
                 to: (number) => "" + Math.floor(number),
                 from: (string) => Number(string)
@@ -30,5 +30,5 @@ function setupSlider(id, start, end, onchange) {
             }
         }
     );
-    element.noUiSlider.on("change", onchange);
+    element.noUiSlider.on("slide", onchange);
 }

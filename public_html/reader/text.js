@@ -256,7 +256,7 @@ class SessionManager {
             '../../private/reader/getUnreadTextString.php',
             (message) => {
                 window.alert(message);
-                this.logout();
+                redirect("");
             },
             (text) => this.startSession(text));
     }
