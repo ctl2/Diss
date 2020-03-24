@@ -2,7 +2,7 @@
 
 The system allows volunteers to contribute reading data. Data is collected via the Mouse-Contingent Reading NLG evaluation method (Zarrieß, S.,Loth, S., and Schlangen, D).
 
-Researchers may upload texts to be assigned to volunteers, view and download data-analyses and compare texts.
+Researchers may upload texts to be assigned to volunteers, compare texts based on collected reading data and receive customised data-analyses.
 
 ## Hosting Instructions
 
