@@ -1,6 +1,6 @@
 <?php
-    $host = "HOST";
-    $username = "USERNAME";
-    $password = "PASSWORD";
-    $dbname = "DBNAME";
+    $host = "mysql-server-1";
+    $username = "ctl2";
+    $password = "7P5V9twqVB";
+    $dbname = "ctl2";
 ?>

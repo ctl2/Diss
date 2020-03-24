@@ -6,7 +6,7 @@ Researchers may upload texts to be assigned to volunteers, compare texts based o
 
 ## Hosting Instructions
 
-This repository is shared under the [Apache 2.0 license](https://www.apache.org/licenses/LICENSE-2.0.html). Modification, redistribution and personal use are permitted, in accordance with this license.
+This repository is shared under the [Apache 2.0 license](https://www.apache.org/licenses/LICENSE-2.0.html). Modification, redistribution and personal use are permitted in accordance with this license.
 
 ### Server Requirements
 

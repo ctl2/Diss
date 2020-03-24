@@ -118,11 +118,11 @@ analysisNamespace.Window = class {
                     fixations.push(newFixation);
                 }
             } else { // Prioritise left or right-side characters in time allocation
-                // gazeDuration = window.duration / (windowLength + (windowLength-1) + ... + 1)
+                // firstFixationDuration = window.duration / (windowLength + (windowLength-1) + ... + 1)
                 firstFixationDuration = this.duration / (((windowLength * windowLength) + windowLength) / 2);
-                 // The first fixation on a line tends to be longer than other fixations due to a lack of preprocessing
-                 // K Rayner, 1977, Visual attention in reading: Eye movements reflect cognitive processes
-                if (this.isPathStart) firstFixationDuration *= 0.7;
+                 /* The first fixation on a line tends to be longer than other fixations due to a lack of preprocessing
+                    K Rayner, 1977, Visual attention in reading: Eye movements reflect cognitive processes
+                 */ if (this.isPathStart) firstFixationDuration *= 0.7;
                 for (let i = this.leftmostChar; i <= this.rightmostChar; i++) {
                     let gazeDuration = (
                         this.isPathStart?
@@ -332,7 +332,8 @@ analysisNamespace.Text = class extends Array {
         }
 
         // Initialise analysis variables
-        let minPauseTime = windowPath.getMinPauseTime();
+        const minFixationTime = 8;
+        const minPauseTime = windowPath.getMinPauseTime();
         let currentWindows = {
             previous: windowPath.getWindow(-1),
             current: windowPath.getWindow(0),
@@ -366,7 +367,8 @@ analysisNamespace.Text = class extends Array {
                 }
             } else {
                 currentWasAccepted = true;
-                if (!currentWindows.current.isImmediatelyBefore(currentWindows.next) || currentWindows.next.duration < 8) {
+                if (!currentWindows.current.isImmediatelyBefore(currentWindows.next) || currentWindows.next.duration < minFixationTime) {
+                    // A path end-point was found.
                     currentWindows.current.isPathEnd = true;
                 }
             }
@@ -842,7 +844,7 @@ analysisNamespace.DisplayerTree = class {
     }
 
     highlight() {
-        if (this.isHighlighted === true) return;
+        // if (this.isHighlighted === true) return;
         this.isHighlighted = true;
         this.element.onclick = this.highlightedOnclick;
         this.setStyle(
@@ -860,12 +862,12 @@ analysisNamespace.DisplayerTree = class {
     }
 
     unhighlight() {
-        if (this.isHighlighted === false) return;
+        // if (this.isHighlighted === false) return;
         this.isHighlighted = false;
         this.element.onclick = this.unhighlightedOnclick;
         this.setStyle(
             "font-weight",
-            "normal"
+            ""
         );
         this.setStyle(
             "border-bottom-style",
@@ -1069,7 +1071,6 @@ analysisNamespace.StatisticDisplayer = class {
     }
 
     setHues() {
-        //this.displayerTree.resetDisplayers();
         if (this.highlightedDisplayer !== undefined) {
             this.highlightedDisplayer.unhighlight();
             this.highlightedDisplayer = undefined;
@@ -1096,6 +1097,10 @@ analysisNamespace.StatisticDisplayer = class {
     }
 
     changeToken(token) {
+        if (this.highlightedDisplayer !== undefined) {
+            this.highlightedDisplayer.unhighlight();
+            this.highlightedDisplayer = undefined;
+        }
         this.displayerTree.resetHues(this.depth);
         this.depth = this.getDepth(token);
         this.setHues();
