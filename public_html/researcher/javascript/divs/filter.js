@@ -1,5 +1,6 @@
 'use strict';
 
+var username;   // logged in account's username
 var allTexts;   // holds all text info
 var unselTexts = {}; // holds text=>[ver1, ver2, ...] objects
 var selTexts = [];   // holds {text, version} objects
@@ -36,7 +37,7 @@ function getUnfilteredUnselectedTexts() {
     return unfilUnselTexts;
 }
 
-function displayUnselectedTexts(pageNumber) {
+function displayUnselectedTexts(pageNumber = Number(document.getElementById("unsel_nav").value)) {
     // Define a list of unselected titles
     let titles = Object.keys(unselTexts);
     // Use the list to display texts
@@ -68,7 +69,7 @@ function displayUnselectedTexts(pageNumber) {
     updateNavSel(document.getElementById("unsel_nav"), titles.length, pageNumber);
 }
 
-function displaySelectedTexts(pageNumber) {
+function displaySelectedTexts(pageNumber = Number(document.getElementById("sel_nav").value)) {
     // Use the selected texts list to display texts
     for (let i = 0; i < textRows; i++) {
         let cell = document.getElementById("sel_" + i);
@@ -125,7 +126,7 @@ class Filter {
         // Loop through available texts.
         for (let title in texts) {
             if (!this.passesTitleFilter(title, filter.titleKeywords)) continue;
-            if (!this.passesOwnershipFilter(texts[title].isOwned, filter.ownership)) continue;
+            if (!this.passesOwnershipFilter(texts[title].uploader, filter.ownership)) continue;
             // Define accepted version collection.
             let acceptedVersions = [];
             // loop through versions.
@@ -151,10 +152,10 @@ class Filter {
         return true;
     }
 
-    passesOwnershipFilter(isOwned, ownershipFilter) {
+    passesOwnershipFilter(owner, ownershipFilter) {
         if (ownershipFilter != "all") {
-            if (isOwned == false && ownershipFilter == "owned") return false;
-            if (isOwned == true && ownershipFilter == "unowned") return false;
+            if (owner != username && ownershipFilter == "owned") return false;
+            if (owner == username && ownershipFilter == "unowned") return false;
         }
         return true;
     }

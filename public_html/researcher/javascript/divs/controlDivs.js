@@ -54,7 +54,7 @@ function updateDivButtons() {
             break;
         case 1:
             let selTextTitle = selTexts[0].title;
-            if (allTexts[selTextTitle].isOwned == true) {
+            if (allTexts[selTextTitle].uploader == username) {
                 enableButton(verButton);
             } else {
                 disableButton(verButton);

@@ -1,7 +1,9 @@
 const textRows = 5; // The amount of texts per page
 
-function setupTextTable(allTextsJSON) {
-    allTexts = JSON.parse(allTextsJSON);
+function setupTextTable(responseJSON) {
+    let response = JSON.parse(responseJSON);
+    allTexts = response.texts;
+    username = response.username;
     let textTable = document.getElementById("texts");
     appendTextRows(textTable);
     appendNavRow(textTable);

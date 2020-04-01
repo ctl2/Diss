@@ -1,8 +1,8 @@
 'use-strict';
 
-var analysisNamespace = {};
+const AnalysisNamespace = {};
 
-analysisNamespace.SortedNumberList = class extends Array {
+AnalysisNamespace.SortedNumberList = class extends Array {
 
     constructor() {
         super();
@@ -68,7 +68,7 @@ analysisNamespace.SortedNumberList = class extends Array {
 
 }
 
-analysisNamespace.Window = class {
+AnalysisNamespace.Window = class {
 
     constructor(data) {
         if (data === undefined) {
@@ -114,7 +114,7 @@ analysisNamespace.Window = class {
             if (this.isPathStart === this.isPathEnd) { // Spread time across all characters evenly
                 firstFixationDuration = this.duration / windowLength;
                 for (let i = this.leftmostChar; i <= this.rightmostChar; i++) {
-                    let newFixation = new analysisNamespace.Fixation(i, firstFixationDuration, firstFixationDuration);
+                    let newFixation = new AnalysisNamespace.Fixation(i, firstFixationDuration, firstFixationDuration);
                     fixations.push(newFixation);
                 }
             } else { // Prioritise left or right-side characters in time allocation
@@ -129,7 +129,7 @@ analysisNamespace.Window = class {
                         firstFixationDuration * (this.rightmostChar + 1 - i): // Prioritise left side
                         firstFixationDuration * (i + 1 - this.leftmostChar) // Prioritise right side
                     );
-                    let newFixation = new analysisNamespace.Fixation(i, firstFixationDuration, gazeDuration);
+                    let newFixation = new AnalysisNamespace.Fixation(i, firstFixationDuration, gazeDuration);
                     fixations.push(newFixation);
                 }
             }
@@ -149,7 +149,7 @@ analysisNamespace.Window = class {
 
 }
 
-analysisNamespace.WindowPath = class extends Array {
+AnalysisNamespace.WindowPath = class extends Array {
 
     constructor(wpm, windows) {
         super();
@@ -158,7 +158,7 @@ analysisNamespace.WindowPath = class extends Array {
         let speedDivider = wpm / 250; // 250 words per minute is around average
         for (let window of windows) {
             window.duration /= speedDivider;
-            this.push(new analysisNamespace.Window(window));
+            this.push(new AnalysisNamespace.Window(window));
         }
     }
 
@@ -167,7 +167,7 @@ analysisNamespace.WindowPath = class extends Array {
         // Initialise variables
         const pauseThresholdPercent = 15; // A window's openOffset must be in the highest pauseThresholdPercent% to count as a pause
         let windowCount = 0;
-        let largestOffsets = new analysisNamespace.SortedNumberList();
+        let largestOffsets = new AnalysisNamespace.SortedNumberList();
         let offsetQuant = this.length * (pauseThresholdPercent / 100);
         // Populate largestOffsets with the first values found
         while (windowCount < offsetQuant) {
@@ -188,13 +188,13 @@ analysisNamespace.WindowPath = class extends Array {
 
     getWindow(pathIndex) {
         return (pathIndex < 0)?
-            new analysisNamespace.Window():
+            new AnalysisNamespace.Window():
             this[pathIndex];
     }
 
 }
 
-analysisNamespace.Fixation = class {
+AnalysisNamespace.Fixation = class {
 
     constructor(charIndex, firstFixationDuration, gazeDuration) {
         this.charIndex = charIndex;
@@ -217,7 +217,7 @@ analysisNamespace.Fixation = class {
 
 }
 
-analysisNamespace.Regression = class {
+AnalysisNamespace.Regression = class {
 
     pathDuration = 0;
 
@@ -236,7 +236,7 @@ analysisNamespace.Regression = class {
 
 }
 
-analysisNamespace.RegressionSet = class {
+AnalysisNamespace.RegressionSet = class {
 
     addRegressionSet(regressionSet) {
         for (let otherChar in regressionSet) {
@@ -262,11 +262,11 @@ analysisNamespace.RegressionSet = class {
 
 }
 
-analysisNamespace.Character = class {
+AnalysisNamespace.Character = class {
 
     fixations = [];
-    regressionsIn = new analysisNamespace.RegressionSet();
-    regressionsOut = new analysisNamespace.RegressionSet();
+    regressionsIn = new AnalysisNamespace.RegressionSet();
+    regressionsOut = new AnalysisNamespace.RegressionSet();
 
     constructor(isLineStart) {
         this.isLineStart = isLineStart;
@@ -286,12 +286,12 @@ analysisNamespace.Character = class {
 
 }
 
-analysisNamespace.Text = class extends Array {
+AnalysisNamespace.Text = class extends Array {
 
     constructor(windowPath, totalCharacters) {
         super();
         // Get line end info
-        let lineStartIndexes = new analysisNamespace.SortedNumberList();
+        let lineStartIndexes = new AnalysisNamespace.SortedNumberList();
         let curWindow = windowPath[windowPath.length - 1];
         let foundLineEnd = false;
         // Search the path
@@ -305,7 +305,7 @@ analysisNamespace.Text = class extends Array {
         // Make character objects
         for (let i = 0; i < totalCharacters; i++) {
             let isLineStart = lineStartIndexes.contains(i);
-            this[i] = new analysisNamespace.Character(isLineStart);
+            this[i] = new AnalysisNamespace.Character(isLineStart);
         }
 
         // Declare construction helper functions
@@ -346,19 +346,20 @@ analysisNamespace.Text = class extends Array {
             let currentWasAccepted = false;
             currentWindows.next = windowPath.getWindow(i);
             if (currentWindows.previous.isPathEnd) {
-                if (
-                    currentWindows.current.isImmediatelyBefore(currentWindows.next) &&
-                    (
-                        currentWindows.current.contains(leftmostUnfixatedCharIndex) ||
-                        currentWindows.current.duration > minPauseTime
-                    )
+                    if (
+                        currentWindows.current.isImmediatelyBefore(currentWindows.next) && (
+                            currentWindows.current.duration > minPauseTime || (
+                                currentWindows.current.contains(leftmostUnfixatedCharIndex) &&
+                                currentWindows.current.duration > minFixationTime
+                            )
+                        )
                 ) {
                     // A new path start-point was found. May be a jump forward, a regression or a new line.
                     currentWasAccepted = true;
                     currentWindows.current.isPathStart = true;
                     if (currentWindows.current.isBefore(currentWindows.previous)) {
                         // A regression was found
-                        let newRegression = new analysisNamespace.Regression(
+                        let newRegression = new AnalysisNamespace.Regression(
                             currentWindows.previous.focalChar,
                             currentWindows.current.focalChar
                         );
@@ -367,7 +368,10 @@ analysisNamespace.Text = class extends Array {
                 }
             } else {
                 currentWasAccepted = true;
-                if (!currentWindows.current.isImmediatelyBefore(currentWindows.next) || currentWindows.next.duration < minFixationTime) {
+                if (
+                    !currentWindows.current.isImmediatelyBefore(currentWindows.next) ||
+                    currentWindows.next.duration < minFixationTime // Catches forward skips
+                ) {
                     // A path end-point was found.
                     currentWindows.current.isPathEnd = true;
                 }
@@ -404,16 +408,16 @@ analysisNamespace.Text = class extends Array {
         }
         // Record the final accepted fixation
         currentWindows.previous.isPathEnd = true;
-        recordFixations(currentWindows.previous, new analysisNamespace.Window());
+        recordFixations(currentWindows.previous, new AnalysisNamespace.Window());
     }
 
 }
 
-analysisNamespace.CharacterAnalysis = class {
+AnalysisNamespace.CharacterAnalysis = class {
 
     regressions = {
-        regressionsOut: new analysisNamespace.RegressionSet(),
-        regressionsIn: new analysisNamespace.RegressionSet()
+        regressionsOut: new AnalysisNamespace.RegressionSet(),
+        regressionsIn: new AnalysisNamespace.RegressionSet()
     };
 
     constructor(character) {
@@ -445,8 +449,8 @@ analysisNamespace.CharacterAnalysis = class {
                 (total, regressionOut) => total + regressionOut.pathDuration,
                 0
             );
-            this.regressionsInCount = Object.values(character.regressionsOut).reduce(
-                (total, regressionOut) => total + regressionOut.count,
+            this.regressionsInCount = Object.values(character.regressionsIn).reduce(
+                (total, regressionIn) => total + regressionIn.count,
                 0
             );
             this.regressionsInTime = Object.values(character.regressionsIn).reduce(
@@ -469,19 +473,19 @@ analysisNamespace.CharacterAnalysis = class {
 
 }
 
-analysisNamespace.TextAnalysis = class extends Array {
+AnalysisNamespace.TextAnalysis = class extends Array {
 
     constructor(text) {
         super();
         // Analyse by character
         for (let char of text) {
-            this.push(new analysisNamespace.CharacterAnalysis(char));
+            this.push(new AnalysisNamespace.CharacterAnalysis(char));
         }
     }
 
 }
 
-analysisNamespace.RatioList = class extends Array {
+AnalysisNamespace.RatioList = class extends Array {
 
     constructor(numbers, min, max, reverse) {
         super();
@@ -515,7 +519,7 @@ analysisNamespace.RatioList = class extends Array {
 
 }
 
-analysisNamespace.Reader = class {
+AnalysisNamespace.Reader = class {
 
     constructor(reader) {
         this.usernameHash = reader.usernameHash;
@@ -553,7 +557,7 @@ analysisNamespace.Reader = class {
 
 }
 
-analysisNamespace.TextAnalysisList = class extends Array {
+AnalysisNamespace.TextAnalysisList = class extends Array {
 
     constructor(textLength) {
         super();
@@ -571,12 +575,12 @@ analysisNamespace.TextAnalysisList = class extends Array {
         while (textLength-- > 0) {
             let statistics = {};
             for (let statisticName of statisticNameList) {
-                statistics[statisticName] = new analysisNamespace.SortedNumberList();
+                statistics[statisticName] = new AnalysisNamespace.SortedNumberList();
             }
             this.push({
                 statistics: statistics,
-                regressionsIn: new analysisNamespace.RegressionSet(),
-                regressionsOut: new analysisNamespace.RegressionSet()
+                regressionsIn: new AnalysisNamespace.RegressionSet(),
+                regressionsOut: new AnalysisNamespace.RegressionSet()
             });
         }
     }
@@ -620,7 +624,7 @@ analysisNamespace.TextAnalysisList = class extends Array {
                 total.addRegressionSet(this[index][regressionType]);
                 return total;
             },
-            new analysisNamespace.RegressionSet()
+            new AnalysisNamespace.RegressionSet()
         );
         let totals = [];
         for (let i = 0; i < this.length; i++) {
@@ -635,7 +639,7 @@ analysisNamespace.TextAnalysisList = class extends Array {
 
 }
 
-analysisNamespace.LoadFeedbackDisplayer = class {
+AnalysisNamespace.LoadFeedbackDisplayer = class {
 
     available = Object.assign(
         {
@@ -714,23 +718,30 @@ analysisNamespace.LoadFeedbackDisplayer = class {
 
 }
 
-analysisNamespace.ReadingManager = class {
+import("../../../../node_modules/progressbar.js/dist/progressbar.js").then(
+    (progressBarModule) => {
+        AnalysisNamespace.LoadFeedbackDisplayer.available = new LibNamespace.ProgressBar("an_available-feedback");
+        AnalysisNamespace.LoadFeedbackDisplayer.used = new LibNamespace.ProgressBar("an_used-feedback");
+    }
+);
+
+AnalysisNamespace.ReadingManager = class {
 
     constructor(textLength, readers, filters) {
-        this.loadFeedbackDisplayer = new analysisNamespace.LoadFeedbackDisplayer(readers.length);
+        this.loadFeedbackDisplayer = new AnalysisNamespace.LoadFeedbackDisplayer(readers.length);
         this.filters = filters;
         this.textLength = textLength;
         // Initialise readings field
         this.readers = readers.map(
-            (reader) => new analysisNamespace.Reader(reader)
+            (reader) => new AnalysisNamespace.Reader(reader)
         );
     }
 
     addReading(readerIndex, windows) {
         let reader = this.readers[readerIndex];
-        let windowPath = new analysisNamespace.WindowPath(reader.wpm, windows);
-        let text = new analysisNamespace.Text(windowPath, this.textLength);
-        reader.textAnalysis = new analysisNamespace.TextAnalysis(text);
+        let windowPath = new AnalysisNamespace.WindowPath(reader.wpm, windows);
+        let text = new AnalysisNamespace.Text(windowPath, this.textLength);
+        reader.textAnalysis = new AnalysisNamespace.TextAnalysis(text);
         // Return true if the reading affects the analysis requested by the reader
         let isRelevant = reader.isWithinGroup(...Object.values(this.filters));
         this.loadFeedbackDisplayer.addReading(isRelevant);
@@ -744,7 +755,7 @@ analysisNamespace.ReadingManager = class {
     }
 
     getNewTextAnalysis() {
-        let newAnalysisList = new analysisNamespace.TextAnalysisList(this.textLength);
+        let newAnalysisList = new AnalysisNamespace.TextAnalysisList(this.textLength);
         let usedReadings = 0;
         for (let reader of this.readers) {
             if (reader.isWithinGroup(...Object.values(this.filters)) && reader.hasOwnProperty("textAnalysis")) {
@@ -766,7 +777,7 @@ analysisNamespace.ReadingManager = class {
 
 }
 
-analysisNamespace.DisplayerTree = class {
+AnalysisNamespace.DisplayerTree = class {
 
     isHighlighted = false;
 
@@ -877,7 +888,7 @@ analysisNamespace.DisplayerTree = class {
 
 }
 
-analysisNamespace.DisplayerLeaf = class extends analysisNamespace.DisplayerTree {
+AnalysisNamespace.DisplayerLeaf = class extends AnalysisNamespace.DisplayerTree {
 
     constructor(parentElement, unhighlightedOnclick, highlightedOnclick, text, index) {
         super(parentElement, unhighlightedOnclick, highlightedOnclick);
@@ -887,7 +898,7 @@ analysisNamespace.DisplayerLeaf = class extends analysisNamespace.DisplayerTree 
 
 }
 
-analysisNamespace.DisplayerTreeRoot = class extends Array {
+AnalysisNamespace.DisplayerTreeRoot = class extends Array {
 
     constructor(root, text, onclick1, onclick2) {
         super();
@@ -910,19 +921,19 @@ analysisNamespace.DisplayerTreeRoot = class extends Array {
                     }
                 } else {
                     if (!isTracingToken) {
-                        displayerArray.push(new analysisNamespace.DisplayerLeaf(parentElement, onclick1, onclick2, char, i));
+                        displayerArray.push(new AnalysisNamespace.DisplayerLeaf(parentElement, onclick1, onclick2, char, i));
                     } else if (ender.test(char)) {
                         // Recursion case
-                        let tokenDisplayer = new analysisNamespace.DisplayerTree(parentElement, onclick1, onclick2);
+                        let tokenDisplayer = new AnalysisNamespace.DisplayerTree(parentElement, onclick1, onclick2);
                         tokenDisplayer.children = formSubTree(tokenDisplayer.element, tokenStartIndex, i, depth + 1);
                         displayerArray.push(tokenDisplayer);
-                        displayerArray.push(new analysisNamespace.DisplayerLeaf(parentElement, onclick1, onclick2, char, i));
+                        displayerArray.push(new AnalysisNamespace.DisplayerLeaf(parentElement, onclick1, onclick2, char, i));
                         isTracingToken = false;
                     }
                 }
             }
             if (isTracingToken) {
-                let tokenDisplayer = new analysisNamespace.DisplayerTree(parentElement, onclick1, onclick2);
+                let tokenDisplayer = new AnalysisNamespace.DisplayerTree(parentElement, onclick1, onclick2);
                 tokenDisplayer.children = formSubTree(tokenDisplayer.element, tokenStartIndex, tokenEndIndex, depth + 1);
                 displayerArray.push(tokenDisplayer);
             }
@@ -994,7 +1005,7 @@ analysisNamespace.DisplayerTreeRoot = class extends Array {
                 nextIndex++;
             }
         }
-        let hues = new analysisNamespace.RatioList(
+        let hues = new AnalysisNamespace.RatioList(
             tokenisedAverages,
             0, // Red
             120, // Green
@@ -1013,7 +1024,7 @@ analysisNamespace.DisplayerTreeRoot = class extends Array {
     }
 
     setBorderAlphas(borderAverages) {
-        let borderAlphas = new analysisNamespace.RatioList(
+        let borderAlphas = new AnalysisNamespace.RatioList(
             borderAverages,
             0, // transparent
             1, // opaque
@@ -1026,7 +1037,7 @@ analysisNamespace.DisplayerTreeRoot = class extends Array {
 
 }
 
-analysisNamespace.StatisticDisplayer = class {
+AnalysisNamespace.StatisticDisplayer = class {
 
     depth = this.getDepth(document.getElementById("an_token_sel").value);
     statistic = document.getElementById("an_statistic_sel").value;
@@ -1034,40 +1045,28 @@ analysisNamespace.StatisticDisplayer = class {
 
     constructor(root, text, readers) {
         // Make text elements
-        this.displayerTree = new analysisNamespace.DisplayerTreeRoot(
+        this.displayerTree = new AnalysisNamespace.DisplayerTreeRoot(
             root,
             text,
             (displayer) => this.displayPaths(displayer),
             () => this.setHues()
         );
-         // change "slide" to "change" to reduce slowdown
-         let ageSlider = document.getElementById("an_age").noUiSlider;
-         let wpmSlider = document.getElementById("an_wpm").noUiSlider;
-         let widthSlider = document.getElementById("an_inner_width").noUiSlider;
-        ageSlider.on(
-            "slide",
-            (values, handleIndex) => this.changeFilter("Age", values[handleIndex], handleIndex)
-        );
-        wpmSlider.on(
-            "slide",
-            (values, handleIndex) => this.changeFilter("WPM", values[handleIndex], handleIndex)
-        );
-        widthSlider.on(
-            "slide",
-            (values, handleIndex) => this.changeFilter("InnerWidth", values[handleIndex], handleIndex)
-        );
+        let onclick = (values, handleIndex, filterName) => this.changeFilter(values[handleIndex], handleIndex, filterName);
+        this.constructor.ageSlider.replaceListener("slide", onclick, ["Age"]);
+        this.constructor.wpmSlider.replaceListener("slide", onclick, ["WPM"]);
+        this.constructor.widthSlider.replaceListener("slide", onclick, ["InnerWidth"]);
         let filters = {
             gender: document.getElementById("an_gender_sel").value,
             impairment: document.getElementById("an_impairment_sel").value,
-            minAge: ageSlider.get()[0],
-            maxAge: ageSlider.get()[1],
-            minWPM: wpmSlider.get()[0],
-            maxWPM: wpmSlider.get()[1],
-            minInnerWidth: widthSlider.get()[0],
-            maxInnerWidth: widthSlider.get()[1]
+            minAge: this.constructor.ageSlider.getValue(0),
+            maxAge: this.constructor.ageSlider.getValue(1),
+            minWPM: this.constructor.wpmSlider.getValue(0),
+            maxWPM: this.constructor.wpmSlider.getValue(1),
+            minInnerWidth: this.constructor.widthSlider.getValue(0),
+            maxInnerWidth: this.constructor.widthSlider.getValue(1)
         };
         // Initialise a new ReadingManager for text analysis
-        this.readingManager = new analysisNamespace.ReadingManager(text.length, readers, filters);
+        this.readingManager = new AnalysisNamespace.ReadingManager(text.length, readers, filters);
     }
 
     setHues() {
@@ -1116,7 +1115,7 @@ analysisNamespace.StatisticDisplayer = class {
         this.setHues();
     }
 
-    changeFilter(filterName, filterValue, handleIndex) {
+    changeFilter(filterValue, handleIndex, filterName) {
         this.displayerTree.resetBorderAlphas(this.depth);
         if (handleIndex !== undefined) {
             filterName = (
@@ -1139,6 +1138,7 @@ analysisNamespace.StatisticDisplayer = class {
         }
     }
 
+    // Returns a function for finding a token's value from its characters' averages
     getValueDeriver() {
         switch (this.statistic) {
             case "firstFixationDuration":
@@ -1192,7 +1192,16 @@ analysisNamespace.StatisticDisplayer = class {
 
 }
 
-analysisNamespace.InterfaceManager = class {
+import("../../../../node_modules/nouislider/distribute/nouislider.min.js").then(
+    (sliderModule) => {
+        // Set up slider elements
+        AnalysisNamespace.StatisticDisplayer.ageSlider = new LibNamespace.Slider('an_age', 0, 100);
+        AnalysisNamespace.StatisticDisplayer.wpmSlider = new LibNamespace.Slider('an_wpm', 0, 500);
+        AnalysisNamespace.StatisticDisplayer.widthSlider = new LibNamespace.Slider('an_inner_width', 0, 2000);
+    }
+);
+
+AnalysisNamespace.InterfaceManager = class {
 
     constructor(title, version) {
         this.textDiv = document.getElementById("an_text");
@@ -1236,7 +1245,7 @@ analysisNamespace.InterfaceManager = class {
                         (text) => {
                             // Handle text
                             this.text = text;
-                            this.statisticDisplayer = new analysisNamespace.StatisticDisplayer(
+                            this.statisticDisplayer = new AnalysisNamespace.StatisticDisplayer(
                                 this.textDiv,
                                 text,
                                 readers
@@ -1366,56 +1375,8 @@ function showAnalyseDiv() {
         if (analysisInterface !== undefined) {
             analysisInterface.destroy();
         }
-        analysisInterface = new analysisNamespace.InterfaceManager(title, version);
+        analysisInterface = new AnalysisNamespace.InterfaceManager(title, version);
     }
     // Show only the analysis div
     hideDivs("an");
 }
-
-import("../../../../node_modules/progressbar.js/dist/progressbar.js").then(
-    (progressBarModule) => {
-        let options = {
-            color: '#3a3a3a',
-            strokeWidth: "4",
-            trailColor: '#444444',
-            duration: 400,
-            from: {
-                color: '#822'
-            },
-            to: {
-                color: '#282'
-            },
-            step: function(state, circle, attachment) {
-                circle.path.setAttribute('stroke', state.color);
-            },
-            text: {
-                value: '0',
-                style: {
-                    color: '#efe',
-                    position: 'absolute',
-                    left: '1%',
-                    top: '10%',
-                    padding: 0,
-                    margin: 0
-                }
-            }
-        };
-        analysisNamespace.LoadFeedbackDisplayer.available = {
-            element: document.getElementById("an_available-feedback")
-        };
-        analysisNamespace.LoadFeedbackDisplayer.used = {
-            element: document.getElementById("an_used-feedback")
-        };
-        analysisNamespace.LoadFeedbackDisplayer.available.bar = new ProgressBar.Line(analysisNamespace.LoadFeedbackDisplayer.available.element, options);
-        analysisNamespace.LoadFeedbackDisplayer.used.bar = new ProgressBar.Line(analysisNamespace.LoadFeedbackDisplayer.used.element, options);
-    }
-);
-
-import("../../../../node_modules/nouislider/distribute/nouislider.min.js").then(
-    (sliderModule) => {
-        // Set up slider elements
-        setupSlider('an_age', 0, 100);
-        setupSlider('an_wpm', 0, 500);
-        setupSlider('an_inner_width', 0, 2000);
-    }
-)

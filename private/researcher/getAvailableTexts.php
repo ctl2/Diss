@@ -28,7 +28,6 @@
             if (!array_key_exists($title, $texts)) {
                 $texts[$title] = array();
                 $texts[$title]["uploader"] = $textRow["uploader"];
-                $texts[$title]["isOwned"] = ($username == $textRow["uploader"]);
                 $texts[$title]["versions"] = array();
             }
             $texts[$title]["versions"][$textRow["version"]] = array(
@@ -47,6 +46,9 @@
     $username = getSessionVar("username");
     $texts = getAvailableTexts($conn, $username);
 
-    respond(true, json_encode($texts));
+    respond(true, json_encode([
+        "texts" => $texts,
+        "username" => $username
+    ]));
 
 ?>

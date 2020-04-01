@@ -1,10 +1,34 @@
-function showCompareDiv() {
+const ComparisonNamespace = {};
 
-    // Show only the comparison div
-    hideDivs("comp");
+ComparisonNamespace.StatisticDisplayer = class {
+
+    constructor() {
+        this.constructor.ageSlider.noUiSlider.on(
+            "slide",
+            (values, handleIndex) => this.changeFilter("Age", values[handleIndex], handleIndex)
+        );
+        this.constructor.wpmSlider.noUiSlider.on(
+            "slide",
+            (values, handleIndex) => this.changeFilter("WPM", values[handleIndex], handleIndex)
+        );
+        this.constructor.widthSlider.noUiSlider.on(
+            "slide",
+            (values, handleIndex) => this.changeFilter("InnerWidth", values[handleIndex], handleIndex)
+        );
+    }
+
 }
 
-class ReadingComparisonManager {
+import("../../../../node_modules/nouislider/distribute/nouislider.min.js").then(
+    (sliderModule) => {
+        // Set up slider elements
+        ComparisonNamespace.StatisticDisplayer.ageSlider = new LibNamespace.Slider('comp_age', 0, 100);
+        ComparisonNamespace.StatisticDisplayer.wpmSlider = new LibNamespace.Slider('comp_wpm', 0, 500);
+        ComparisonNamespace.StatisticDisplayer.widthSlider = new LibNamespace.Slider('comp_inner_width', 0, 2000);
+    }
+)
+
+ComparisonNamespace.ReadingManager = class {
 
     readings = [];
     displayers = [];
@@ -49,4 +73,10 @@ class ReadingComparisonManager {
         }
     }
 
+}
+
+function showCompareDiv() {
+
+    // Show only the comparison div
+    hideDivs("comp");
 }
