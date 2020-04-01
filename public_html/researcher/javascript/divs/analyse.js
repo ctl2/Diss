@@ -1051,7 +1051,7 @@ AnalysisNamespace.StatisticDisplayer = class {
             (displayer) => this.displayPaths(displayer),
             () => this.setHues()
         );
-        let onclick = (values, handleIndex, filterName) => this.changeFilter(values[handleIndex], handleIndex, filterName);
+        let onclick = (values, handleIndex, filterName) => this.changeFilter(filterName, values[handleIndex], handleIndex);
         this.constructor.ageSlider.replaceListener("slide", onclick, ["Age"]);
         this.constructor.wpmSlider.replaceListener("slide", onclick, ["WPM"]);
         this.constructor.widthSlider.replaceListener("slide", onclick, ["InnerWidth"]);
@@ -1115,7 +1115,7 @@ AnalysisNamespace.StatisticDisplayer = class {
         this.setHues();
     }
 
-    changeFilter(filterValue, handleIndex, filterName) {
+    changeFilter(filterName, filterValue, handleIndex) {
         this.displayerTree.resetBorderAlphas(this.depth);
         if (handleIndex !== undefined) {
             filterName = (
@@ -1366,7 +1366,7 @@ AnalysisNamespace.InterfaceManager = class {
 
 var analysisInterface;
 
-function showAnalyseDiv() {
+function showAnalyseDiv(button) {
     // Make a new interface for text analysis
     let selText = selTexts[0];
     let title = selText.title;
@@ -1378,5 +1378,5 @@ function showAnalyseDiv() {
         analysisInterface = new AnalysisNamespace.InterfaceManager(title, version);
     }
     // Show only the analysis div
-    hideDivs("an");
+    hideDivs(button, "an");
 }

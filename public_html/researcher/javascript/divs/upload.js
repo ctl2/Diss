@@ -1,6 +1,6 @@
 'use strict';
 
-function showUploadDiv(isNewText) {
+function showUploadDiv(button, isNewText) {
     // Prepare the title input element
     let title_el = document.getElementById("up_title");
     if (isNewText) {
@@ -14,7 +14,7 @@ function showUploadDiv(isNewText) {
         title_el.disabled = "disabled";
     }
     // Show only the upload div
-    hideDivs("up");
+    hideDivs(button, "up");
 }
 
 function upload() {

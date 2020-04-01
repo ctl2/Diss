@@ -16,9 +16,9 @@ function enableButton(button) {
     button.classList.remove("disabled");
 }
 
-function hideDivs(exception) {
-    // Define a collection of div IDs to hide
-    var divNames = ["fil", "up", "view", "an", "comp"];
+function hideDivs(button, exception) {
+    // Define a collection of div IDs
+    let divNames = ["fil", "up", "view", "an", "comp"];
     // Hide any unhidden divs
     for (let divName of divNames) {
         let div = document.getElementById(divName);

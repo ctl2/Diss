@@ -5,9 +5,9 @@ var allTexts;   // holds all text info
 var unselTexts = {}; // holds text=>[ver1, ver2, ...] objects
 var selTexts = [];   // holds {text, version} objects
 
-function showFilterDiv() {
+function showFilterDiv(button) {
     // Show only the filter div
-    hideDivs("fil");
+    hideDivs(button, "fil");
 }
 
 // Filter commands only filter unselected texts.
@@ -101,7 +101,7 @@ function updateNavSel(sel, textQuant, pageNumber) {
         navOpt.value = i;
         navOpt.innerText = i;
         // Maintain user page selection
-        if (i === pageNumber) navOpt.selected = "selected";
+        if (i == pageNumber) navOpt.selected = "selected";
         sel.appendChild(navOpt);
     }
 }

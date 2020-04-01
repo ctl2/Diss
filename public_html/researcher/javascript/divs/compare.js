@@ -75,8 +75,8 @@ ComparisonNamespace.ReadingManager = class {
 
 }
 
-function showCompareDiv() {
+function showCompareDiv(button) {
 
     // Show only the comparison div
-    hideDivs("comp");
+    hideDivs(button, "comp");
 }

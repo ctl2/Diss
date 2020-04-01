@@ -1,6 +1,6 @@
 
 
-function showViewDetailsDiv() {
+function showViewDetailsDiv(button) {
     // Retrieve the selected text
     let selText = selTexts[0];
     let title = selText.title;
@@ -28,7 +28,7 @@ function showViewDetailsDiv() {
     document.getElementById("view_text").innerText = "LOADING...";
     postRequest(["title=" + title, "version=" + version], "../../private/researcher/getTextString.php", window.alert, showText);
     // Show only the view div
-    hideDivs("view");
+    hideDivs(button, "view");
 }
 
 function showOptionalMetaInfo(span, value) {

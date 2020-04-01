@@ -65,6 +65,15 @@
                 border-color: #6c9e8e;
             }
 
+            .enabled.tabButton.selected {
+                background-color: #d8a02d8f;
+                border-color: #e8c171;
+            }
+
+            .disabled.tabButton.selected {
+
+            }
+
             #top {
                 padding: 0.5%;
                 width: 99%;
@@ -323,12 +332,12 @@
     <body>
 
         <div class="container" id="top">
-            <input class="button enabled" id="but_fil" type="button" onclick="showFilterDiv()" value="Filter" />
-            <input class="button enabled" id="but_new" type="button" onclick="showUploadDiv(true)" value="New Text" />
-            <input class="button disabled" id="but_ver" type="button" onclick="showUploadDiv(false)" value="New Version" disabled />
-            <input class="button disabled" id="but_view" type="button" onclick="showViewDetailsDiv()" value="View Details" disabled />
-            <input class="button disabled" id="but_ana" type="button" onclick="showAnalyseDiv()" value="Analyse" disabled />
-            <input class="button disabled" id="but_comp" type="button" onclick="showCompareDiv()" value="Compare" disabled />
+            <input class="button tabButton enabled" id="but_fil" type="button" onclick="showFilterDiv(this)" value="Filter" />
+            <input class="button tabButton enabled" id="but_new" type="button" onclick="showUploadDiv(this, true)" value="New Text" />
+            <input class="button tabButton disabled" id="but_ver" type="button" onclick="showUploadDiv(this, false)" value="New Version" disabled />
+            <input class="button tabButton disabled" id="but_view" type="button" onclick="showViewDetailsDiv(this)" value="View Details" disabled />
+            <input class="button tabButton disabled" id="but_ana" type="button" onclick="showAnalyseDiv(this)" value="Analyse" disabled />
+            <input class="button tabButton disabled" id="but_comp" type="button" onclick="showCompareDiv(this)" value="Compare" disabled />
             <input class="button disabled" id="but_hide" type="button" onclick="hideDivs()" value="Hide" disabled />
             <input class="button enabled" id="but_logout" type="button" onclick="redirect('')" value="Logout" />
         </div>
