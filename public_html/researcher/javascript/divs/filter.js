@@ -37,7 +37,14 @@ function getUnfilteredUnselectedTexts() {
     return unfilUnselTexts;
 }
 
-function displayUnselectedTexts(pageNumber = Number(document.getElementById("unsel_nav").value)) {
+function displayUnselectedTexts(pageNumber = document.getElementById("unsel_nav").value) {
+    pageNumber = Number(pageNumber);
+    // Decrement pageNumber if the current page has no texts and isn't page 1
+    if (pageNumber > 1) {
+        if ((pageNumber-1) * textRows >= unselTexts.length) {
+            pageNumber--;
+        }
+    }
     // Define a list of unselected titles
     let titles = Object.keys(unselTexts);
     // Use the list to display texts
@@ -69,11 +76,18 @@ function displayUnselectedTexts(pageNumber = Number(document.getElementById("uns
     updateNavSel(document.getElementById("unsel_nav"), titles.length, pageNumber);
 }
 
-function displaySelectedTexts(pageNumber = Number(document.getElementById("sel_nav").value)) {
+function displaySelectedTexts(pageNumber = document.getElementById("sel_nav").value) {
+    pageNumber = Number(pageNumber);
+    // Decrement pageNumber if the current page has no texts and isn't page 1
+    if (pageNumber > 1) {
+        if ((pageNumber-1) * textRows >= selTexts.length) {
+            pageNumber--;
+        }
+    }
     // Use the selected texts list to display texts
     for (let i = 0; i < textRows; i++) {
         let cell = document.getElementById("sel_" + i);
-        let textIndex = ((pageNumber-1)*textRows) + i;
+        let textIndex = ((pageNumber-1) * textRows) + i;
         if (textIndex >= selTexts.length) {
             // Hide empty cell
             cell.style.visibility = "hidden";
