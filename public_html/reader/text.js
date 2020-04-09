@@ -23,7 +23,11 @@ class Session {
         let charSpan = document.getElementById(this.charIdPrefix + "_" + charIndex);
         if (['\r', '\t', '\v', '\n', '\f'].indexOf(this.text[charIndex]) === -1) {
             if (charIndex < this.leftmostUnshownCharIndex) {
-                charSpan.innerHTML = this.shownChar;
+                charSpan.innerHTML = (
+                    this.isWhiteSpace(charIndex)?
+                    this.text[charIndex]:
+                    this.shownChar
+                );
             } else {
                 charSpan.innerHTML = this.unshownChar;
             }

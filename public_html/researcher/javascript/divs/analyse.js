@@ -107,29 +107,27 @@ AnalysisNamespace.Window = class {
         // Initialise variables
         let windowLength = 1 + this.rightmostChar - this.leftmostChar;
         let fixations = [];
-        let firstFixationDuration;
         //
         if (windowLength > 0) {
             //
             if (this.isPathStart === this.isPathEnd) { // Spread time across all characters evenly
-                firstFixationDuration = this.duration / windowLength;
                 for (let i = this.leftmostChar; i <= this.rightmostChar; i++) {
-                    let newFixation = new AnalysisNamespace.Fixation(i, firstFixationDuration, firstFixationDuration);
+                    let newFixation = new AnalysisNamespace.Fixation(i, this.duration, this.duration);
                     fixations.push(newFixation);
                 }
             } else { // Prioritise left or right-side characters in time allocation
-                // firstFixationDuration = window.duration / (windowLength + (windowLength-1) + ... + 1)
-                firstFixationDuration = this.duration / (((windowLength * windowLength) + windowLength) / 2);
-                 /* The first fixation on a line tends to be longer than other fixations due to a lack of preprocessing
+                /*  The first fixation on a line tends to be longer than other fixations due to a lack of preprocessing
                     K Rayner, 1977, Visual attention in reading: Eye movements reflect cognitive processes
-                 */ if (this.isPathStart) firstFixationDuration *= 0.7;
+                */
+                if (this.isPathStart) this.duration = (this.duration / (18 - windowLength)) * 0.4;
+                if (this.isPathEnd) this.duration = (this.duration / (18 - windowLength)) * 0.7;
                 for (let i = this.leftmostChar; i <= this.rightmostChar; i++) {
                     let gazeDuration = (
                         this.isPathStart?
-                        firstFixationDuration * (this.rightmostChar + 1 - i): // Prioritise left side
-                        firstFixationDuration * (i + 1 - this.leftmostChar) // Prioritise right side
+                        this.duration * (this.rightmostChar + 1 - i): // Prioritise left side
+                        this.duration * (i + 1 - this.leftmostChar) // Prioritise right side
                     );
-                    let newFixation = new AnalysisNamespace.Fixation(i, firstFixationDuration, gazeDuration);
+                    let newFixation = new AnalysisNamespace.Fixation(i, this.duration, gazeDuration);
                     fixations.push(newFixation);
                 }
             }
@@ -137,10 +135,7 @@ AnalysisNamespace.Window = class {
             if (this.isPathEnd) fixations[windowLength-1].isPathEnd = true;
         }
         //
-        return {
-            fixations: fixations,
-            firstFixationDuration: firstFixationDuration
-        };
+        return fixations;
     }
 
     contains(charIndex) {
@@ -165,25 +160,25 @@ AnalysisNamespace.WindowPath = class extends Array {
     // Get the minimum gaze duration that will be considered a pause
     getMinPauseTime() {
         // Initialise variables
-        const pauseThresholdPercent = 15; // A window's openOffset must be in the highest pauseThresholdPercent% to count as a pause
+        const pauseThresholdPercent = 15; // A window's duration must be in the highest pauseThresholdPercent% to count as a pause
         let windowCount = 0;
-        let largestOffsets = new AnalysisNamespace.SortedNumberList();
-        let offsetQuant = this.length * (pauseThresholdPercent / 100);
-        // Populate largestOffsets with the first values found
-        while (windowCount < offsetQuant) {
-            let nextOffset = this.getWindow(windowCount++).duration;
-            largestOffsets.insert(nextOffset);
+        let largestDurations = new AnalysisNamespace.SortedNumberList();
+        let maxDurations = this.length * (pauseThresholdPercent / 100);
+        // Populate largestDurations with the first values found
+        while (windowCount < maxDurations) {
+            let nextduration = this.getWindow(windowCount++).duration;
+            largestDurations.insert(nextduration);
         }
-        // Populate largestOffsets with the largest values found
+        // Populate largestDurations with the largest values found
         while (windowCount < this.length) {
-            let nextOffset = this.getWindow(windowCount++).duration;
-            if (nextOffset > largestOffsets.getSmallest()) {
-                largestOffsets.removeSmallest();
-                largestOffsets.insert(nextOffset);
+            let nextduration = this.getWindow(windowCount++).duration;
+            if (nextduration > largestDurations.getSmallest()) {
+                largestDurations.removeSmallest();
+                largestDurations.insert(nextduration);
             }
         }
         // Return the threshold value
-        return largestOffsets.getMean();
+        return largestDurations.getMean();
     }
 
     getWindow(pathIndex) {
@@ -317,11 +312,11 @@ AnalysisNamespace.Text = class extends Array {
             // Handle newly masked chars
             for (let charIndex = oldWindow.leftmostChar; charIndex <= oldWindow.rightmostChar; charIndex++) {
                 if (!newWindow.contains(charIndex)) {
-                    this[charIndex].endCurrentFixation(newFixations.firstFixationDuration);
+                    this[charIndex].endCurrentFixation(newWindow.duration);
                 }
             }
             // Handle unmasked chars
-            for (let newFixation of newFixations.fixations) {
+            for (let newFixation of newFixations) {
                 if (oldWindow.contains(newFixation.charIndex)) {
                     this[newFixation.charIndex].extendCurrentFixation(newFixation.gazeDuration);
                 } else {
@@ -720,8 +715,12 @@ AnalysisNamespace.LoadFeedbackDisplayer = class {
 
 import("../../../../node_modules/progressbar.js/dist/progressbar.js").then(
     (progressBarModule) => {
-        AnalysisNamespace.LoadFeedbackDisplayer.available = new LibNamespace.ProgressBar("an_available-feedback");
-        AnalysisNamespace.LoadFeedbackDisplayer.used = new LibNamespace.ProgressBar("an_used-feedback");
+        try {
+            AnalysisNamespace.LoadFeedbackDisplayer.available = new LibNamespace.ProgressBar("an_available-feedback");
+            AnalysisNamespace.LoadFeedbackDisplayer.used = new LibNamespace.ProgressBar("an_used-feedback");
+        } catch (e) {
+            // Sometimes this just fails for whatever reason. Catching the error prevents it from halting the whole analysis process.
+        }
     }
 );
 
