@@ -41,7 +41,7 @@ function displayUnselectedTexts(pageNumber = document.getElementById("unsel_nav"
     pageNumber = Number(pageNumber);
     // Decrement pageNumber if the current page has no texts and isn't page 1
     if (pageNumber > 1) {
-        if ((pageNumber-1) * textRows >= unselTexts.length) {
+        if ((pageNumber-1) * textRows >= Object.keys(unselTexts).length) {
             pageNumber--;
         }
     }
