@@ -429,9 +429,15 @@ AnalysisNamespace.CharacterAnalysis = class {
         } else {
             // Record fixation data
             this.isLineStart = character.isLineStart;
-            this.firstFixationDuration = character.fixations[0].firstFixationDuration;
-            this.gazeDuration = character.fixations[0].gazeDuration;
-            this.spilloverTime = character.fixations[0].spilloverTime;
+            if (character.fixations.length === 0) {
+                this.firstFixationDuration = 0;
+                this.gazeDuration = 0;
+                this.spilloverTime = 0;
+            } else {
+                this.firstFixationDuration = character.fixations[0].firstFixationDuration;
+                this.gazeDuration = character.fixations[0].gazeDuration;
+                this.spilloverTime = character.fixations[0].spilloverTime;
+            }
             this.totalReadingTime = character.fixations.reduce(
                 (total, fixation) => total + fixation.gazeDuration,
                 0
