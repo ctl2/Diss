@@ -34,6 +34,7 @@ function appendUnselectedTextCell(row_el, index) {
     // Make button
     let selectButton = document.createElement("input");
     selectButton.classList.add("button");
+    selectButton.classList.add("makeSel");
     selectButton.type = "button";
     selectButton.onclick = () => select(
         document.getElementById("unsel_title_" + index).innerText,
@@ -55,6 +56,7 @@ function appendSelectedTextCell(row_el, index) {
     // Make button
     let unselectButton = document.createElement("input");
     unselectButton.classList.add("button");
+    unselectButton.classList.add("makeUnsel");
     unselectButton.type = "button";
     unselectButton.onclick = () => unselect(
         document.getElementById("sel_title_" + index).innerText,

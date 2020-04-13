@@ -111,6 +111,15 @@
                 width: 100%;
             }
 
+            .button.makeSel {
+
+            }
+
+            .button.makeUnsel {
+                background-color: #c69898bf;
+                border-color: #d3b9b9;
+            }
+
             #an {
                 max-width: 1200px;
                 margin: auto;
@@ -349,17 +358,17 @@
             Title Keywords
             <input id="fil_search" form="fil_reset" type="text" placeholder="Search" /><br>
 
-            Ownership
+            Uploader
             <select id="fil_type" form="fil_reset">
-                <option value="all">All</option>
-                <option value="owned">Owned</option>
-                <option value="unowned">Unowned</option>
+                <option value="all">Any</option>
+                <option value="owned">Me</option>
+                <option value="unowned">Not Me</option>
             </select><br>
 
-            Minimum target age
+            Minimum Target Age
             <input id="fil_min_age" form="fil_reset" type="number" value="0" /><br>
 
-            Maximum target age
+            Maximum Target Age
             <input id="fil_max_age" form="fil_reset" type="number" value="255" /><br>
 
             <input id="filter_button" type="button"
